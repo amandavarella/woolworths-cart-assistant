@@ -9,7 +9,16 @@ Browser automation agent using [browser-use](https://github.com/browser-use/brow
 - Configurable step limits to prevent infinite loops
 - Support for complex multi-step tasks
 
-## Setup
+## Getting Started
+
+**Option 1: LLM-Assisted Configuration**
+
+Simply ask your AI assistant:
+```
+Help me get started with Browser Use
+```
+
+**Option 2: Manual Setup**
 
 1. Install dependencies:
 ```bash

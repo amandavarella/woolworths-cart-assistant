@@ -1,4 +1,4 @@
-# Agent Web Base
+# Woolworths Cart Assistant
 
 Browser automation agent using [browser-use](https://github.com/browser-use/browser-use) library with GPT-4o for intelligent web interactions.
 

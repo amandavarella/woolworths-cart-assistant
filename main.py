@@ -7,22 +7,12 @@ load_dotenv()
 import asyncio
 
 # Read shopping list from file
-shopping_list_path = Path(__file__).parent / "shopping-list.txt"
-with open(shopping_list_path, "r", encoding="utf-8") as f:
-    shopping_list_items = [line.strip() for line in f.readlines() if line.strip()]
-
-# Create task that searches and adds all items from shopping list
-shopping_list_text = "\n".join(f"- {item}" for item in shopping_list_items)
-task = (
-    f'Go to https://auth.woolworths.com.au/u/login, wait 30 seconds. '
-    f'Then for each item in the following shopping list, search for it and add it to the cart:\n'
-    f'{shopping_list_text}\n'
-    f'After adding all items to the cart, call done but keep the browser open.'
-)
+task='Visit https://duckduckgo.com and search for "browser-use founders"'
 
 browser = Browser(
-	headless=False,  # Show browser window
-    keep_alive=True,
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir='~/Library/Application Support/Google/Chrome',
+    profile_directory='Default',
 )
 
 agent = Agent(

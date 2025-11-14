@@ -1,9 +1,15 @@
 # https://docs.browser-use.com/quickstart
 from browser_use import Agent, Browser, ChatOpenAI
 from dotenv import load_dotenv
+from pathlib import Path
 load_dotenv()
 
 import asyncio
+
+# Load detailed agent instructions
+instructions_path = Path(__file__).parent / "AGENT_INSTRUCTIONS.md"
+with open(instructions_path, "r", encoding="utf-8") as f:
+    agent_instructions = f.read()
 
 browser = Browser(
 	headless=False,  # Show browser window
@@ -18,6 +24,7 @@ agent = Agent(
     browser=browser,
     max_steps=8,
     llm=ChatOpenAI(model='gpt-4o'),
+    extend_system_message=agent_instructions,
 )
 
 

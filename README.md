@@ -32,35 +32,49 @@ OPENAI_API_KEY=your_key_here
 
 ## Usage
 
-Run the agent:
+1. Add your shopping items to `shopping-list.txt` (one item per line)
+
+2. Run the agent:
 ```bash
 python main.py
 ```
 
 The agent will:
-1. Navigate to the specified website
-2. Wait for user interaction (30 seconds for login)
-3. Search for products
-4. Add items to cart
-5. Keep the browser open for manual interaction
+1. Navigate to the Woolworths login page
+2. Wait for user interaction (30 seconds for manual login)
+3. Read all items from `shopping-list.txt`
+4. Search for each item
+5. Add all items to the cart
+6. Keep the browser open for manual checkout
 
 Press `Ctrl+C` to close the browser when done.
 
 ## Configuration
 
+### Shopping List
+
+Edit `shopping-list.txt` to add or modify items. Each line should contain one product name:
+```
+a2 Milk Full Cream Milk 3L
+Inside Out Almond Milk Unsweetened 1L
+Devondale Shredded Mozzarella Cheese 600g
+```
+
+### Code Configuration
+
 Edit `main.py` to customize:
-- `task`: The instruction for the agent
-- `max_steps`: Maximum number of steps before stopping (default: 8)
+- `max_steps`: Maximum number of steps before stopping (default: 200)
 - `llm`: Model to use (default: gpt-4o)
-- `headless`: Set to `True` to run without visible browser window
+- `headless`: Set to `True` in Browser config to run without visible browser window
 
-## Example Task
+## How It Works
 
-Current configuration demonstrates automated shopping:
-- Login to Woolworths
-- Search for "a2 milk 3L"
-- Add product to cart
-- Keep browser open for checkout
+The agent:
+- Reads items from `shopping-list.txt` at startup
+- Dynamically generates a task with all items from the file
+- Searches for each item on Woolworths website
+- Adds each item to the cart automatically
+- Keeps the browser open for you to complete checkout
 
 ## Notes
 

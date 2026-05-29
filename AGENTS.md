@@ -56,6 +56,8 @@ The browser skills detect whether you are logged in and, if not, open a visible 
 - The **first** run must be non-headless (`HEADLESS=false`).
 - After logging in once, set `HEADLESS=true` for unattended runs.
 
+**Browser preference:** When a task needs a logged-in Woolworths (or Clove) session, drive this project's own persistent Chrome profile (`PROFILE_DIR`, e.g. `.browser-profile`) via Playwright — **not** the Cursor/built-in browser. That profile already holds the saved login, so prefer launching it with `launchBrowser()` from `src/browser.js`. If the session isn't valid, run non-headless and let the user log in there once; don't ask the user to log into the Cursor browser.
+
 ## Output
 
 - All hand-off files and reports are written to `output/` (git-ignored).

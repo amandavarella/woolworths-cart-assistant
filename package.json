@@ -7,7 +7,8 @@
     "shop": "node skills/run-grocery-pipeline/scripts/run-grocery-pipeline.js",
     "clove": "node skills/get-clove-items/scripts/get-clove-items.js",
     "map": "node skills/map-preferred-items/scripts/map-preferred-items.js",
-    "cart": "node skills/add-to-woolworths-cart/scripts/add-to-woolworths-cart.js"
+    "cart": "node skills/add-to-woolworths-cart/scripts/add-to-woolworths-cart.js",
+    "sync-prefs": "node skills/sync-preferred-from-pastshops/scripts/sync-preferred-from-pastshops.js"
   },
   "engines": {
     "node": ">=20"

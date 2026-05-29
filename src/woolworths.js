@@ -195,6 +195,101 @@ export async function setQuantity(page, productName, target, maxQty = 12) {
   return reached ? Number(reached) || 1 : 1;
 }
 
+// In-page helper: collect product names from list tiles by reading each
+// "Add to cart" button's aria-label (piercing shadow DOM) and stripping the
+// "Add " prefix / " to cart" suffix.
+const COLLECT_NAMES_FN = `
+function __collectProductNames() {
+  const out = [];
+  const seen = new Set();
+  (function walk(root, d) {
+    if (d > 16) return;
+    for (const el of root.querySelectorAll('*')) {
+      if (el.shadowRoot && !seen.has(el.shadowRoot)) { seen.add(el.shadowRoot); walk(el.shadowRoot, d + 1); }
+      if (el.tagName === 'BUTTON') {
+        const aria = el.getAttribute('aria-label') || '';
+        const txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
+          const name = aria
+            .replace(/^Add\\s+/i, '')
+            .replace(/\\s+to cart\\.?\\s*$/i, '')
+            .replace(/\\s+/g, ' ')
+            .trim();
+          if (name) out.push(name);
+        }
+      }
+    }
+  })(document, 0);
+  return out;
+}`;
+
+async function waitForNamedResults(page, timeoutMs = 12000) {
+  const start = Date.now();
+  let last = 0;
+  while (Date.now() - start < timeoutMs) {
+    const n = await page.evaluate(`(() => { ${COLLECT_NAMES_FN}; return __collectProductNames().length; })()`);
+    if (n > 0 && n === last) return n; // count stabilised
+    last = n;
+    await page.waitForTimeout(500);
+  }
+  return last;
+}
+
+/**
+ * Read every product on the Woolworths "My Lists → past shops" list across all
+ * pages. `listPath` defaults to the "everything" list. Returns a de-duplicated
+ * (case-insensitive, order-preserving) array of product names.
+ *
+ * Note: only purchasable tiles (those with an "Add to cart" button) are
+ * captured; unavailable / out-of-stock items are skipped because they have no
+ * add button and aren't usable as preferred products anyway.
+ */
+export async function readPastShopProducts(page, { base, listPath = "/shop/mylists/pastshops/everything" } = {}) {
+  const url = (p) => `${base}${listPath}?pageNumber=${p}`;
+
+  await page.goto(url(1), { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3000);
+  await waitForNamedResults(page);
+
+  const pageCount = await page.evaluate(() => {
+    const el = document.querySelector(".page-count");
+    return el ? parseInt(el.textContent.trim(), 10) || 1 : 1;
+  });
+
+  const all = [];
+  for (let p = 1; p <= pageCount; p++) {
+    if (p > 1) {
+      await page.goto(url(p), { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(2000);
+    }
+    await waitForNamedResults(page);
+    // Scroll through the page so every lazily-rendered tile mounts.
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 800) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page.waitForTimeout(600);
+    const names = await page.evaluate(`(() => { ${COLLECT_NAMES_FN}; return __collectProductNames(); })()`);
+    all.push({ page: p, names });
+  }
+
+  const seen = new Set();
+  const products = [];
+  for (const { names } of all) {
+    for (const n of names) {
+      const key = n.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      products.push(n);
+    }
+  }
+
+  return { pageCount, perPage: all.map((x) => ({ page: x.page, count: x.names.length })), products };
+}
+
 export async function readTrolley(page) {
   return page.evaluate(async () => {
     const r = await fetch("/apis/ui/Trolley", {

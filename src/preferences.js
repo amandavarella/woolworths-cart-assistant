@@ -33,6 +33,45 @@ export function loadPreferred(filePath) {
   return items;
 }
 
+/**
+ * Append product names to the preferred-items file, skipping any that already
+ * exist (case-insensitive) and de-duplicating the incoming list. Preserves the
+ * existing file contents and ordering; new items are appended in order.
+ *
+ * Returns { added, skipped, total } where `added` is the list of names written.
+ */
+export function appendPreferred(filePath, names) {
+  const original = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+
+  const existing = new Set(
+    original
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"))
+      .map((l) => l.toLowerCase())
+  );
+
+  const seen = new Set();
+  const added = [];
+  for (const raw of names) {
+    const name = (raw || "").replace(/\s+/g, " ").trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (existing.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    added.push(name);
+  }
+
+  if (added.length) {
+    // Keep exactly one trailing newline, then append the new names as one
+    // continuous list (no section header).
+    const body = original.replace(/\s*$/, original ? "\n" : "") + added.join("\n") + "\n";
+    fs.writeFileSync(filePath, body);
+  }
+
+  return { added, skipped: names.length - added.length, total: existing.size + added.length };
+}
+
 function tokenize(text) {
   return (text || "").toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
 }

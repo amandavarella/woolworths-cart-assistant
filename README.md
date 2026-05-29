@@ -14,6 +14,7 @@ Each skill lives in `skills/<name>/` with a `SKILL.md` (instructions) and a `scr
 | [`map-preferred-items`](./skills/map-preferred-items/SKILL.md) | Maps ingredients → preferred Woolworths products | `clove-items.json` + `preferred-items.txt` | `output/shopping-plan.json` |
 | [`add-to-woolworths-cart`](./skills/add-to-woolworths-cart/SKILL.md) | Adds the plan to your Woolworths cart | `shopping-plan.json` | `output/results.json` |
 | [`run-grocery-pipeline`](./skills/run-grocery-pipeline/SKILL.md) | **Orchestrator** — runs all three in order | — | end-to-end |
+| [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md) | Reads your Woolworths past-shops list and adds new products to your preferred items | past shops page | `preferred-items.txt` (+ `output/past-shop-items.json`) |
 
 The two browser skills each open their own window and reuse a saved login profile, so the pure-logic mapping step in the middle never touches a website.
 
@@ -82,6 +83,15 @@ Added: 8   Cart now: 8 items, $34.20
 Edit `preferred-items.txt` — one Woolworths product name per line. Lines
 starting with `#` are ignored. These are the exact products bought whenever a
 Clove ingredient matches them by keyword.
+
+To seed or refresh this list from everything you've bought before, run the
+[`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md)
+skill — it reads your Woolworths past-shops list (all pages) and appends any
+new products:
+
+```bash
+npm run sync-prefs
+```
 
 ```
 a2 Milk Full Cream Milk 3L

@@ -1,0 +1,33 @@
+import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+
+/**
+ * Shared configuration for every skill.
+ *
+ * Each skill script is a standalone Node entry point, so they all load the same
+ * environment-driven config from here instead of duplicating the parsing.
+ */
+export function loadConfig() {
+  const outputDir = path.resolve(process.env.OUTPUT_DIR || "./output");
+  return {
+    profileDir: process.env.PROFILE_DIR || "./.browser-profile",
+    headless: String(process.env.HEADLESS || "false").toLowerCase() === "true",
+    channel: process.env.BROWSER_CHANNEL || "chrome",
+    cloveUrl: process.env.CLOVE_URL || "https://clove.kitchen/groceries",
+    wwUrl: process.env.WOOLWORTHS_URL || "https://www.woolworths.com.au",
+    preferredFile: process.env.PREFERRED_ITEMS_FILE || "./preferred-items.txt",
+    maxQty: Number(process.env.MAX_QTY || 12),
+    limit: process.env.LIMIT ? Number(process.env.LIMIT) : null,
+    outputDir,
+    // Hand-off files shared between skills.
+    cloveItemsFile: path.join(outputDir, "clove-items.json"),
+    shoppingPlanFile: path.join(outputDir, "shopping-plan.json"),
+    resultsFile: path.join(outputDir, "results.json"),
+  };
+}
+
+/** Ensure the output directory exists before a skill writes its hand-off file. */
+export function ensureOutputDir(cfg) {
+  fs.mkdirSync(cfg.outputDir, { recursive: true });
+}

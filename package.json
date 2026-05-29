@@ -1,0 +1,20 @@
+{
+  "name": "woolworths-cart-assistant",
+  "version": "1.0.0",
+  "description": "Reads ingredients from Clove, maps them to your preferred Woolworths products, and adds them to your Woolworths cart.",
+  "type": "module",
+  "bin": {
+    "wca": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "login": "node src/index.js --login-only"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.49.0"
+  }
+}

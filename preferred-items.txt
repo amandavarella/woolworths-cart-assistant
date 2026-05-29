@@ -1,10 +1,14 @@
+# Preferred Woolworths products — one product per line.
+# When an ingredient from Clove matches one of these (by keyword overlap),
+# this exact product is what gets added to your Woolworths cart.
+# Lines starting with '#' and blank lines are ignored.
+
 L'OR Espresso Decaf Ristretto Intensity 9 Coffee Pods
 Cobram Estate Classic Extra Virgin Olive Oil
 MasterFoods Onion Powder 50g
 Western Star Salted Butter Block 500g
 Woolworths Fresh Avocado
 Macro Organic Chickpeas 400g
-Western Star Salted Butter Block 500g
 Sunbeam Sultanas 1kg
 Woolworths Frozen Peas 1kg
 Woolworths Fresh Basil Bunch

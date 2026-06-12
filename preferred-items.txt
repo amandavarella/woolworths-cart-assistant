@@ -1,6 +1,7 @@
 # Preferred Woolworths products — one product per line.
-# When an ingredient from Clove matches one of these (by keyword overlap),
-# this exact product is what gets added to your Woolworths cart.
+# When an item from any source (e.g. Clove or AnyList) matches one of these
+# (by keyword overlap), this exact product is what gets added to your
+# Woolworths cart.
 # Lines starting with '#' and blank lines are ignored.
 
 L'OR Espresso Decaf Ristretto Intensity 9 Coffee Pods

@@ -11,6 +11,9 @@ yarn-error.log*
 .browser-profile/
 *.profile/
 
+# AnyList API encrypted credentials/token cache (never commit)
+.anylist_credentials
+
 # Run output / skill hand-off files
 output/
 results.json

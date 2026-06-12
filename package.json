@@ -1,11 +1,12 @@
 {
   "name": "woolworths-cart-assistant",
   "version": "1.0.0",
-  "description": "Reads ingredients from Clove, maps them to your preferred Woolworths products, and adds them to your Woolworths cart.",
+  "description": "Reads ingredients from Clove and AnyList, maps them to your preferred Woolworths products, and adds them to your Woolworths cart.",
   "type": "module",
   "scripts": {
     "shop": "node skills/run-grocery-pipeline/scripts/run-grocery-pipeline.js",
     "clove": "node skills/get-clove-items/scripts/get-clove-items.js",
+    "anylist": "node skills/get-anylist-items/scripts/get-anylist-items.js",
     "map": "node skills/map-preferred-items/scripts/map-preferred-items.js",
     "cart": "node skills/add-to-woolworths-cart/scripts/add-to-woolworths-cart.js",
     "sync-prefs": "node skills/sync-preferred-from-pastshops/scripts/sync-preferred-from-pastshops.js"
@@ -14,6 +15,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "anylist": "github:kevdliu/anylist",
     "dotenv": "^16.4.5",
     "playwright": "^1.49.0"
   }

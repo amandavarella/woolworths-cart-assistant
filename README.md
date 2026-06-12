@@ -1,6 +1,6 @@
 # Woolworths Cart Assistant
 
-Reads your grocery ingredients from [Clove](https://clove.kitchen/groceries), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart — automatically.
+Reads your grocery ingredients from [Clove](https://clove.kitchen/groceries) and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart — automatically.
 
 This project is **agent-driven**: the work is split into small, composable *skills* that an AI agent (or you, from the command line) can run individually or chain end to end. See [`AGENTS.md`](./AGENTS.md) for the agent guidelines (`CLAUDE.md` is a symlink to it).
 
@@ -11,12 +11,13 @@ Each skill lives in `skills/<name>/` with a `SKILL.md` (instructions) and a `scr
 | Skill | What it does | Reads | Writes |
 |-------|--------------|-------|--------|
 | [`get-clove-items`](./skills/get-clove-items/SKILL.md) | Reads unchecked ingredients from Clove | Clove page | `output/clove-items.json` |
-| [`map-preferred-items`](./skills/map-preferred-items/SKILL.md) | Maps ingredients → preferred Woolworths products | `clove-items.json` + `preferred-items.txt` | `output/shopping-plan.json` |
+| [`get-anylist-items`](./skills/get-anylist-items/SKILL.md) | Reads unchecked items from AnyList (via API, no browser) | AnyList API | `output/anylist-items.json` |
+| [`map-preferred-items`](./skills/map-preferred-items/SKILL.md) | Maps ingredients → preferred Woolworths products (merges Clove + AnyList) | `clove-items.json` + `anylist-items.json` + `preferred-items.txt` | `output/shopping-plan.json` |
 | [`add-to-woolworths-cart`](./skills/add-to-woolworths-cart/SKILL.md) | Adds the plan to your Woolworths cart | `shopping-plan.json` | `output/results.json` |
-| [`run-grocery-pipeline`](./skills/run-grocery-pipeline/SKILL.md) | **Orchestrator** — runs all three in order | — | end-to-end |
+| [`run-grocery-pipeline`](./skills/run-grocery-pipeline/SKILL.md) | **Orchestrator** — runs all of the above in order | — | end-to-end |
 | [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md) | Reads your Woolworths past-shops list and adds new products to your preferred items | past shops page | `preferred-items.txt` (+ `output/past-shop-items.json`) |
 
-The two browser skills each open their own window and reuse a saved login profile, so the pure-logic mapping step in the middle never touches a website.
+The browser skills each open their own window and reuse a saved login profile, so the pure-logic mapping step in the middle never touches a website.
 
 ## Requirements
 
@@ -37,7 +38,7 @@ they open a visible window, wait for you to log in, then continue. Your session
 is saved in a dedicated profile (`PROFILE_DIR`), so future runs are automatic.
 
 Run the whole pipeline once with a visible browser (`HEADLESS=false`, the
-default) to log in:
+default) to log into each site:
 
 ```bash
 npm run shop
@@ -45,9 +46,14 @@ npm run shop
 
 After that, set `HEADLESS=true` in `.env` for unattended runs.
 
+> **AnyList** is read through its (unofficial) API, not a browser. Put your
+> `ANYLIST_EMAIL` and `ANYLIST_PASSWORD` in `.env` to enable it. If you don't
+> use AnyList, leave them blank — the pipeline logs a warning for the AnyList
+> step and continues with your Clove items.
+
 ## Usage
 
-Run the entire workflow (Clove → preferred items → Woolworths):
+Run the entire workflow (Clove + AnyList → preferred items → Woolworths):
 
 ```bash
 npm run shop
@@ -56,9 +62,10 @@ npm run shop
 Or run a single stage (e.g. to inspect the plan before anything touches your cart):
 
 ```bash
-npm run clove   # get-clove-items        → output/clove-items.json
-npm run map     # map-preferred-items    → output/shopping-plan.json
-npm run cart    # add-to-woolworths-cart → output/results.json
+npm run clove     # get-clove-items        → output/clove-items.json
+npm run anylist   # get-anylist-items      → output/anylist-items.json
+npm run map       # map-preferred-items    → output/shopping-plan.json
+npm run cart      # add-to-woolworths-cart → output/results.json
 ```
 
 You can also invoke any skill's script directly, e.g.:
@@ -107,11 +114,15 @@ Woolworths Fresh Herb Coriander Bunch each
 | `HEADLESS` | `false` | Run without a visible window (keep `false` for first login) |
 | `BROWSER_CHANNEL` | `chrome` | `chrome` uses installed Chrome; `""` uses bundled Chromium |
 | `CLOVE_URL` | `https://clove.kitchen/groceries` | Clove groceries page |
+| `ANYLIST_EMAIL` | _(unset)_ | AnyList account email (enables the AnyList source) |
+| `ANYLIST_PASSWORD` | _(unset)_ | AnyList account password |
+| `ANYLIST_LIST_NAME` | `Groceries` | Name of the AnyList list to read |
+| `ANYLIST_CREDENTIALS_FILE` | `./.anylist_credentials` | Encrypted AnyList token cache (git-ignored) |
 | `WOOLWORTHS_URL` | `https://www.woolworths.com.au` | Woolworths base URL |
 | `PREFERRED_ITEMS_FILE` | `./preferred-items.txt` | Your preferred products |
 | `MAX_QTY` | `12` | Safety cap on quantity per product |
 | `OUTPUT_DIR` | `./output` | Where skills write hand-off files and reports |
-| `LIMIT` | _(unset)_ | Process only the first N Clove ingredients (testing) |
+| `LIMIT` | _(unset)_ | Process only the first N items per source (testing) |
 
 ## Project layout
 
@@ -120,9 +131,10 @@ AGENTS.md                  # agent guidelines (CLAUDE.md is a symlink to this)
 CLAUDE.md -> AGENTS.md
 preferred-items.txt        # your preferred Woolworths products
 src/                       # shared logic imported by the skill scripts
-  config.js  browser.js  clove.js  preferences.js  quantity.js  woolworths.js
+  config.js  browser.js  clove.js  anylist.js  preferences.js  quantity.js  woolworths.js
 skills/
   get-clove-items/         SKILL.md + scripts/
+  get-anylist-items/       SKILL.md + scripts/
   map-preferred-items/     SKILL.md + scripts/
   add-to-woolworths-cart/  SKILL.md + scripts/
   run-grocery-pipeline/    SKILL.md + scripts/   (orchestrator)

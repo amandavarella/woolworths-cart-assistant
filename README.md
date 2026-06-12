@@ -16,6 +16,7 @@ Each skill lives in `skills/<name>/` with a `SKILL.md` (instructions) and a `scr
 | [`add-to-woolworths-cart`](./skills/add-to-woolworths-cart/SKILL.md) | Adds the plan to your Woolworths cart | `shopping-plan.json` | `output/results.json` |
 | [`run-grocery-pipeline`](./skills/run-grocery-pipeline/SKILL.md) | **Orchestrator** — runs all of the above in order | — | end-to-end |
 | [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md) | Reads your Woolworths past-shops list and adds new products to your preferred items | past shops page | `preferred-items.txt` (+ `output/past-shop-items.json`) |
+| [`sync-preferred-from-order`](./skills/sync-preferred-from-order/SKILL.md) | Reads a single Woolworths order (latest or a specific one) and adds new products to your preferred items | order detail API | `preferred-items.txt` (+ `output/order-items.json`) |
 
 The browser skills each open their own window and reuse a saved login profile, so the pure-logic mapping step in the middle never touches a website.
 
@@ -100,6 +101,15 @@ new products:
 npm run sync-prefs
 ```
 
+Or pull from a single shop with
+[`sync-preferred-from-order`](./skills/sync-preferred-from-order/SKILL.md) —
+your latest order by default, or a specific one via `ORDER_ID` / `ORDER_URL`:
+
+```bash
+npm run sync-order                 # latest order
+ORDER_ID=310959361 npm run sync-order
+```
+
 ```
 a2 Milk Full Cream Milk 3L
 Cobram Estate Classic Extra Virgin Olive Oil
@@ -119,6 +129,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | `ANYLIST_LIST_NAME` | `Groceries` | Name of the AnyList list to read |
 | `ANYLIST_CREDENTIALS_FILE` | `./.anylist_credentials` | Encrypted AnyList token cache (git-ignored) |
 | `WOOLWORTHS_URL` | `https://www.woolworths.com.au` | Woolworths base URL |
+| `ORDER_ID` / `ORDER_URL` | _(unset)_ | A specific order for `sync-preferred-from-order` (else latest) |
 | `PREFERRED_ITEMS_FILE` | `./preferred-items.txt` | Your preferred products |
 | `MAX_QTY` | `12` | Safety cap on quantity per product |
 | `OUTPUT_DIR` | `./output` | Where skills write hand-off files and reports |
@@ -138,6 +149,8 @@ skills/
   map-preferred-items/     SKILL.md + scripts/
   add-to-woolworths-cart/  SKILL.md + scripts/
   run-grocery-pipeline/    SKILL.md + scripts/   (orchestrator)
+  sync-preferred-from-pastshops/  SKILL.md + scripts/
+  sync-preferred-from-order/      SKILL.md + scripts/
 output/                    # git-ignored hand-off files & reports
 ```
 

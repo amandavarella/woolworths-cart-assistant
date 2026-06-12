@@ -1,19 +1,17 @@
 import { keywords } from "./preferences.js";
 
-// Product-name fragments that indicate a non-food item — used to avoid adding
-// kitchenware, clothing, toys, cosmetics, cleaning products, etc.
+// Product-name fragments that indicate a non-grocery hard good — used to avoid
+// adding kitchenware, electronics, clothing, toys, stationery, garden, and pet
+// gear. Groceries proper plus everyday consumables (personal care, toiletries,
+// health, and house-cleaning products) are all allowed and intentionally NOT
+// listed here.
 const NONFOOD_WORDS = [
   "dishrack", "dish rack", "autospout", "water bottle", "bottle cap", "storage box",
   "cookware", "bakeware", "utensil", "cutlery", "frying pan", "saucepan", "pot set",
-  "electric", "appliance", "scented", "fragrance", "candle", "detergent", "dishwashing",
-  "laundry", "shampoo", "conditioner", "body wash", "soap bar", "deodorant", "toilet paper",
-  "tissue", "nappy", "diaper", "insect", "mosquito", "sunscreen", "body lotion",
-  "vitamin", "supplement", "medicine", "bandage", "first aid", "stationery", "notebook",
-  "battery", "charger", "earphone", "puzzle", "costume", "inflatable", "clothing",
-  "shirt", "sock", "towel", "bedding", "pillow", "pillowcase", "hat ", "mop", "broom",
-  "vacuum", "air freshener", "cat food", "dog food", "pet ", "cat toy", "dog toy",
-  "fertiliser", "garden", "tool kit", "mouthwash", "toothpaste", "toothbrush",
-  "razor", "shaving", "liner", "hair", "nail", "lipstick", "eye ink",
+  "electric", "appliance", "candle", "stationery", "notebook", "battery", "charger",
+  "earphone", "puzzle", "costume", "inflatable", "clothing", "shirt", "sock", "towel",
+  "bedding", "pillow", "pillowcase", "hat ", "fertiliser", "garden", "tool kit",
+  "cat food", "dog food", "pet ", "cat toy", "dog toy",
 ];
 
 const SEARCH = (base, term) =>
@@ -288,6 +286,105 @@ export async function readPastShopProducts(page, { base, listPath = "/shop/mylis
   }
 
   return { pageCount, perPage: all.map((x) => ({ page: x.page, count: x.names.length })), products };
+}
+
+/**
+ * Find the most recent order's id from the "My Account → My Orders" list.
+ *
+ * The list page renders order rows that each link to
+ * `/shop/myaccount/myorders/{id}`, newest first, so the first such link is the
+ * latest order. Returns the id string, or null if none were found.
+ */
+export async function findLatestOrderId(page, { base }) {
+  await page.goto(`${base}/shop/myaccount/myorders`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3500);
+
+  return page.evaluate(() => {
+    const seen = new Set();
+    let found = null;
+    (function walk(root, d) {
+      if (d > 16 || found) return;
+      for (const el of root.querySelectorAll("*")) {
+        if (el.shadowRoot && !seen.has(el.shadowRoot)) { seen.add(el.shadowRoot); walk(el.shadowRoot, d + 1); }
+        if (found) return;
+        if (el.tagName === "A") {
+          const m = (el.getAttribute("href") || "").match(/myorders\/(\d+)/);
+          if (m) { found = m[1]; return; }
+        }
+      }
+    })(document, 0);
+    return found;
+  });
+}
+
+/**
+ * Read every product from a Woolworths order.
+ *
+ * The order-detail page (`/shop/myaccount/myorders/{id}`) loads its data from
+ * an authenticated mobile API call (`.../orders/api/orders/{id}`). Rather than
+ * scrape the DOM (which has no add-to-cart tiles here), we let the page make
+ * that request and intercept the JSON response, then read each line item's
+ * ordered product name from `OrderProducts[].Ordered.Name`.
+ *
+ * Returns `{ orderId, createdDate, total, count, products }` where `products`
+ * is a de-duplicated (case-insensitive, order-preserving) array of names.
+ */
+export async function readOrderProducts(page, { base, orderId, timeoutMs = 25000 }) {
+  if (!orderId) throw new Error("readOrderProducts: orderId is required.");
+
+  const wanted = new RegExp(`/orders/api/orders/${orderId}(?:[/?]|$)`);
+  let resolveBody;
+  const bodyPromise = new Promise((resolve) => { resolveBody = resolve; });
+
+  const onResponse = async (resp) => {
+    try {
+      if (!wanted.test(resp.url())) return;
+      const text = await resp.text();
+      if (text && text.length > 2) resolveBody(text);
+    } catch {
+      /* ignore individual response read errors */
+    }
+  };
+  page.on("response", onResponse);
+
+  try {
+    await page.goto(`${base}/shop/myaccount/myorders/${orderId}`, {
+      waitUntil: "domcontentloaded",
+    });
+
+    const body = await Promise.race([
+      bodyPromise,
+      new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+    if (!body) {
+      throw new Error(
+        `Timed out waiting for order ${orderId} data. Is the order id correct and are you logged in?`
+      );
+    }
+
+    const data = JSON.parse(body);
+    const seen = new Set();
+    const products = [];
+    for (const entry of data.OrderProducts || []) {
+      const ordered = entry.Ordered || {};
+      const name = (ordered.Name || "").replace(/\s+/g, " ").trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      products.push(name);
+    }
+
+    return {
+      orderId: String(data.OrderId || orderId),
+      createdDate: data.CreatedDate || null,
+      total: data.Total ?? null,
+      count: products.length,
+      products,
+    };
+  } finally {
+    page.off("response", onResponse);
+  }
 }
 
 export async function readTrolley(page) {

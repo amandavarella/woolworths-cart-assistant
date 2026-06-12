@@ -59,4 +59,4 @@ Reads from `.env` (see `.env.example`): `WOOLWORTHS_URL`, `PREFERRED_ITEMS_FILE`
 
 - First run must be **non-headless** (`HEADLESS=false`) so you can log into Woolworths. After that the saved session lets it run headless.
 - Only purchasable tiles (those with an "Add to cart" button) are captured. Unavailable / out-of-stock items have no add button and are skipped — they aren't usable as preferred products anyway, so the captured count can be slightly lower than the "All Products (N)" heading.
-- This skill only **adds** to `preferred-items.txt`; it never edits or removes existing entries. Review and prune the list by hand if you don't want non-food items (cleaning products, toiletries, etc.) that you've bought before.
+- This skill only **adds** to `preferred-items.txt`; it never edits or removes existing entries. Everyday consumables — food, personal care, toiletries, and cleaning products — are all kept. Review and prune the list by hand only if you want to drop something you've bought before.

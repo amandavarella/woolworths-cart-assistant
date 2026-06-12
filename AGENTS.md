@@ -12,7 +12,7 @@ Before running any skill, gather context:
 
 ## What this project does
 
-Reads grocery ingredients from [Clove](https://clove.kitchen/groceries), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart. Nothing is ever checked out — the cart is only filled for you to review and order.
+Reads grocery ingredients from [Clove](https://clove.kitchen/groceries) and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart. Nothing is ever checked out — the cart is only filled for you to review and order.
 
 ## Skills
 
@@ -24,9 +24,10 @@ Skills are modular instruction packages in the `skills/` directory. Each skill h
 | Skill | Purpose | Browser | Hand-off |
 |-------|---------|---------|----------|
 | `get-clove-items` | Read unchecked ingredients from Clove | yes | writes `output/clove-items.json` |
-| `map-preferred-items` | Map ingredients → preferred Woolworths products | no (pure logic) | reads `clove-items.json`, writes `output/shopping-plan.json` |
+| `get-anylist-items` | Read unchecked items from AnyList (via API) | no (API) | writes `output/anylist-items.json` |
+| `map-preferred-items` | Map ingredients → preferred Woolworths products (merges Clove + AnyList) | no (pure logic) | reads `clove-items.json` + `anylist-items.json`, writes `output/shopping-plan.json` |
 | `add-to-woolworths-cart` | Add the plan to the Woolworths cart | yes | reads `shopping-plan.json`, writes `output/results.json` |
-| `run-grocery-pipeline` | **Orchestrator** — runs all three in order | — | end-to-end |
+| `run-grocery-pipeline` | **Orchestrator** — runs all of the above in order | — | end-to-end |
 | `sync-preferred-from-pastshops` | Read Woolworths past-shops list → add new products to preferred items | yes | reads past shops page, writes `preferred-items.txt` (+ `output/past-shop-items.json`) |
 
 ### Executing skills
@@ -44,6 +45,7 @@ Common logic lives in `src/` and is imported by the skill scripts:
 - `src/config.js` — loads `.env` config and the `output/` hand-off file paths.
 - `src/browser.js` — persistent browser launch + interactive login helper.
 - `src/clove.js` — Clove extraction.
+- `src/anylist.js` — AnyList API client (logs in with email/password, reads a list's items).
 - `src/preferences.js` — preferred-items matching.
 - `src/quantity.js` — quantity estimation from Clove amounts.
 - `src/woolworths.js` — Woolworths search, add-to-cart, quantity, trolley read.
@@ -57,7 +59,7 @@ The browser skills detect whether you are logged in and, if not, open a visible 
 - The **first** run must be non-headless (`HEADLESS=false`).
 - After logging in once, set `HEADLESS=true` for unattended runs.
 
-**Browser preference:** When a task needs a logged-in Woolworths (or Clove) session, drive this project's own persistent Chrome profile (`PROFILE_DIR`, e.g. `.browser-profile`) via Playwright — **not** the Cursor/built-in browser. That profile already holds the saved login, so prefer launching it with `launchBrowser()` from `src/browser.js`. If the session isn't valid, run non-headless and let the user log in there once; don't ask the user to log into the Cursor browser.
+**Browser preference:** When a task needs a logged-in Woolworths (or Clove) session, drive this project's own persistent Chrome profile (`PROFILE_DIR`, e.g. `.browser-profile`) via Playwright — **not** the Cursor/built-in browser. (AnyList is the exception: it uses the AnyList API with credentials from `.env`, not a browser.) That profile already holds the saved login, so prefer launching it with `launchBrowser()` from `src/browser.js`. If the session isn't valid, run non-headless and let the user log in there once; don't ask the user to log into the Cursor browser.
 
 ## Output
 

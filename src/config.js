@@ -15,6 +15,15 @@ export function loadConfig() {
     headless: String(process.env.HEADLESS || "false").toLowerCase() === "true",
     channel: process.env.BROWSER_CHANNEL || "chrome",
     cloveUrl: process.env.CLOVE_URL || "https://clove.kitchen/groceries",
+    // AnyList is read via its (unofficial) API using email/password — no
+    // browser. Credentials come from .env; an encrypted token cache speeds up
+    // later logins.
+    anylistEmail: process.env.ANYLIST_EMAIL || null,
+    anylistPassword: process.env.ANYLIST_PASSWORD || null,
+    anylistCredentialsFile: process.env.ANYLIST_CREDENTIALS_FILE || "./.anylist_credentials",
+    // Name of the AnyList list to read. Defaults to "Groceries"; override via
+    // ANYLIST_LIST_NAME.
+    anylistListName: process.env.ANYLIST_LIST_NAME || "Groceries",
     wwUrl: process.env.WOOLWORTHS_URL || "https://www.woolworths.com.au",
     preferredFile: process.env.PREFERRED_ITEMS_FILE || "./preferred-items.txt",
     maxQty: Number(process.env.MAX_QTY || 12),
@@ -22,6 +31,7 @@ export function loadConfig() {
     outputDir,
     // Hand-off files shared between skills.
     cloveItemsFile: path.join(outputDir, "clove-items.json"),
+    anylistItemsFile: path.join(outputDir, "anylist-items.json"),
     shoppingPlanFile: path.join(outputDir, "shopping-plan.json"),
     resultsFile: path.join(outputDir, "results.json"),
   };

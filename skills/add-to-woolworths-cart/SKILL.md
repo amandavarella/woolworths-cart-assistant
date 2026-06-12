@@ -1,11 +1,11 @@
 ---
 name: add-to-woolworths-cart
-description: Add a Woolworths shopping plan to your online Woolworths cart. Searches for each planned product, adds the best food-only match, and estimates quantities from the original Clove amounts. Use as the final step of the grocery pipeline, after map-preferred-items has produced output/shopping-plan.json. Requires a logged-in Woolworths session.
+description: Add a Woolworths shopping plan to your online Woolworths cart. Searches for each planned product, adds the best grocery match (food plus everyday consumables like personal care and cleaning), and estimates quantities from the original amounts. Use as the final step of the grocery pipeline, after map-preferred-items has produced output/shopping-plan.json. Requires a logged-in Woolworths session.
 ---
 
 # Add To Woolworths Cart
 
-Read the shopping plan and fill your Woolworths cart. For each item it searches Woolworths, picks the best **food-only** match, clicks "Add to cart", and raises the quantity to the amount estimated from the Clove line.
+Read the shopping plan and fill your Woolworths cart. For each item it searches Woolworths, picks the best **grocery** match (food plus everyday consumables — personal care, toiletries, health, and cleaning products), clicks "Add to cart", and raises the quantity to the amount estimated from the source line.
 
 ## What it does
 
@@ -13,7 +13,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 2. Launches a persistent browser and ensures you are logged into Woolworths (prompts in a visible window if needed; session is reused afterwards).
 3. For each plan entry:
    - Searches Woolworths for `term`.
-   - Chooses the best match. `preferred` entries bias toward the exact product name; non-food results (kitchenware, cleaning, pet, cosmetics, etc.) are filtered out.
+   - Chooses the best match. `preferred` entries bias toward the exact product name; only non-grocery hard goods (kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — food and everyday consumables (personal care, toiletries, cleaning) are all eligible.
    - Adds it to the cart, then estimates quantity (e.g. `6 roma tomatoes` → 6 when sold per piece; `1 tbsp sumac` → 1 jar) and bumps the quantity, capped by `MAX_QTY`.
 4. Reads the trolley total and writes a results report.
 

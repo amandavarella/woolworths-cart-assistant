@@ -9,7 +9,8 @@
     "anylist": "node skills/get-anylist-items/scripts/get-anylist-items.js",
     "map": "node skills/map-preferred-items/scripts/map-preferred-items.js",
     "cart": "node skills/add-to-woolworths-cart/scripts/add-to-woolworths-cart.js",
-    "sync-prefs": "node skills/sync-preferred-from-pastshops/scripts/sync-preferred-from-pastshops.js"
+    "sync-prefs": "node skills/sync-preferred-from-pastshops/scripts/sync-preferred-from-pastshops.js",
+    "sync-order": "node skills/sync-preferred-from-order/scripts/sync-preferred-from-order.js"
   },
   "engines": {
     "node": ">=20"

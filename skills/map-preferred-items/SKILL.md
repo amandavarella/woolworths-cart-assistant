@@ -15,7 +15,7 @@ Read every available item-source hand-off file (`clove-items.json` and/or `anyli
 2. Loads your preferred products from `preferred-items.txt` (one product per line; `#` comments ignored).
 3. For each ingredient, runs head-noun keyword matching against the preferred list:
    - **`preferred`** mode — a confident match was found; the exact preferred product name becomes the search term.
-   - **`fallback`** mode — no match; the raw ingredient name is used for a generic (food-only) Woolworths search later.
+   - **`fallback`** mode — no match; the raw ingredient name is used for a generic Woolworths search later (food plus everyday consumables like personal care and cleaning; only non-grocery hard goods are filtered out).
 4. Merges both sources and **de-duplicates** by resolved search target, so the same product appearing on both lists is only added once. Each plan entry records which `source` it came from.
 5. Writes the plan.
 

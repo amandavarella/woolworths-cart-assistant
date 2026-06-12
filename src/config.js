@@ -25,6 +25,13 @@ export function loadConfig() {
     // ANYLIST_LIST_NAME.
     anylistListName: process.env.ANYLIST_LIST_NAME || "Groceries",
     wwUrl: process.env.WOOLWORTHS_URL || "https://www.woolworths.com.au",
+    // A specific Woolworths order to sync preferred items from. Accepts either
+    // a bare order id (ORDER_ID) or a full order URL (ORDER_URL). When neither
+    // is set, the sync-preferred-from-order skill uses your latest order.
+    orderId:
+      process.env.ORDER_ID ||
+      (process.env.ORDER_URL && (process.env.ORDER_URL.match(/(\d{5,})/) || [])[1]) ||
+      null,
     preferredFile: process.env.PREFERRED_ITEMS_FILE || "./preferred-items.txt",
     maxQty: Number(process.env.MAX_QTY || 12),
     limit: process.env.LIMIT ? Number(process.env.LIMIT) : null,

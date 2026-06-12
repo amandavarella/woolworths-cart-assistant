@@ -29,6 +29,7 @@ Skills are modular instruction packages in the `skills/` directory. Each skill h
 | `add-to-woolworths-cart` | Add the plan to the Woolworths cart | yes | reads `shopping-plan.json`, writes `output/results.json` |
 | `run-grocery-pipeline` | **Orchestrator** — runs all of the above in order | — | end-to-end |
 | `sync-preferred-from-pastshops` | Read Woolworths past-shops list → add new products to preferred items | yes | reads past shops page, writes `preferred-items.txt` (+ `output/past-shop-items.json`) |
+| `sync-preferred-from-order` | Read a single Woolworths order (latest or a specific one) → add new products to preferred items | yes | reads order detail API, writes `preferred-items.txt` (+ `output/order-items.json`) |
 
 ### Executing skills
 

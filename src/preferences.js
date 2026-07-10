@@ -132,14 +132,25 @@ function productTokenSet(item) {
   return new Set(tokenize(text).filter((w) => w.length > 2).map(singularize));
 }
 
+function wordTokens(text) {
+  return tokenize(text).filter((w) => w.length > 2).map(singularize);
+}
+
 /**
  * Match a Clove ingredient against the preferred list.
  *
- * A candidate must share the ingredient's HEAD NOUN (its last content word,
- * singularised) with the product name OR one of its aliases — this prevents
- * matches on generic words ("baby", "powder") or brand tokens ("San Remo")
- * alone, while still letting an alias (e.g. a common misspelling) trigger the
- * match. Among candidates, the one overlapping the most content words wins.
+ * A candidate is gated in one of two ways:
+ *   - the ingredient's HEAD NOUN (its last content word, singularised)
+ *     appears in the product's own name — this prevents matches on generic
+ *     words ("baby", "powder") or brand tokens ("San Remo") alone; or
+ *   - one of the product's ALIASES is fully contained in the ingredient
+ *     (every word of the alias appears somewhere in the ingredient) — this
+ *     lets a multi-word alias (e.g. "lime wedges") route that specific
+ *     phrase without also catching unrelated ingredients that merely share
+ *     its last word (e.g. "lemon wedges" must NOT match a "lime wedges"
+ *     alias just because both end in "wedges").
+ *
+ * Among gated candidates, the one overlapping the most content words wins.
  *
  * Returns { product, score, hits, head, strict } or null.
  */
@@ -147,16 +158,31 @@ export function matchPreferred(ingredientName, preferredList) {
   const content = contentKeywords(ingredientName);
   if (!content.length) return null;
   const head = content[content.length - 1];
+  const ingredientTokens = new Set(wordTokens(ingredientName));
 
   let best = null;
   const ingredientLower = ingredientName.toLowerCase();
   for (const item of preferredList) {
-    const toks = productTokenSet(item);
-    if (!toks.has(head)) continue; // head noun must match (name or alias)
+    const nameToks = new Set(wordTokens(item.name));
 
+    let gated = nameToks.has(head);
+    let aliasBonus = 0;
+    if (!gated) {
+      for (const alias of item.aliases || []) {
+        const aliasToks = wordTokens(alias);
+        if (aliasToks.length && aliasToks.every((w) => ingredientTokens.has(w))) {
+          gated = true;
+          aliasBonus = 5;
+          break;
+        }
+      }
+    }
+    if (!gated) continue;
+
+    const toks = productTokenSet(item);
     let hits = 0;
     for (const w of content) if (toks.has(w)) hits++;
-    let score = hits * 2;
+    let score = hits * 2 + aliasBonus;
     if (item.name.toLowerCase().includes(ingredientLower)) score += 5;
 
     if (!best || score > best.score || (score === best.score && item.name.length < best.product.length)) {

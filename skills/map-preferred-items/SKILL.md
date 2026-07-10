@@ -13,7 +13,7 @@ Read every available item-source hand-off file (`clove-items.json` and/or `anyli
    - `output/clove-items.json` (produced by `get-clove-items`)
    - `output/anylist-items.json` (produced by `get-anylist-items`)
 2. Loads your preferred products from `preferred-items.txt` (one product per line; `#` comments ignored). A line may add extras after `|`: a comma-separated list of alias keywords (e.g. common misspellings) and/or the flag `strict` — see that file's header comment for the syntax.
-3. For each ingredient, runs head-noun keyword matching against the preferred list (matching the product name or any of its aliases):
+3. For each ingredient, runs head-noun keyword matching against the preferred list: a candidate matches if the ingredient's head noun is in the product name itself, OR if one of the product's aliases is *fully* contained in the ingredient (every alias word present) — this lets a multi-word alias like "lime wedges" route that specific phrase without also catching unrelated ingredients that merely share its last word (e.g. "lemon wedges" is unaffected by a "lime wedges" alias):
    - **`preferred`** mode — a confident match was found; the exact preferred product name becomes the search term. If the line was marked `strict`, the plan entry carries `strict: true`.
    - **`fallback`** mode — no match; the raw ingredient name is used for a generic Woolworths search later (food plus everyday consumables like personal care and cleaning; only non-grocery hard goods are filtered out).
 4. Merges both sources and **de-duplicates** by resolved search target, so the same product appearing on both lists is only added once. Each plan entry records which `source` it came from.

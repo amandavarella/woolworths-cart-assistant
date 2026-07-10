@@ -1,13 +1,22 @@
 import { keywords } from "./preferences.js";
 
-// Product-name fragments that indicate a non-grocery hard good — used to avoid
-// adding kitchenware, electronics, clothing, toys, stationery, garden, and pet
-// gear. Groceries proper plus everyday consumables (personal care, toiletries,
-// health, and house-cleaning products) are all allowed and intentionally NOT
-// listed here.
+// Product-name fragments that indicate a non-consumable hard good — used to
+// keep the cart to actual consumables: produce, food & drink, house-cleaning
+// products, and personal hygiene/care. Everything below (kitchen tools and
+// gadgets, electronics, clothing, toys, stationery, garden, pet gear, etc.)
+// is filtered out even if it turns up in a search for a food term.
 const NONFOOD_WORDS = [
+  // Kitchen tools, gadgets & hard kitchenware (not consumable)
   "dishrack", "dish rack", "autospout", "water bottle", "bottle cap", "storage box",
   "cookware", "bakeware", "utensil", "cutlery", "frying pan", "saucepan", "pot set",
+  "squeezer", "juicer", "peeler", "grater", "masher", "whisk", "spatula", "tongs",
+  "corkscrew", "bottle opener", "can opener", "colander", "strainer", "sieve",
+  "chopper", "slicer", "mandoline", "rolling pin", "cutting board", "chopping board",
+  "knife set", "knife block", "scissors", "funnel", "kettle", "toaster", "blender",
+  "mixer", "grinder", "mould", "mold", "tumbler", "flask", "thermos", "gadget",
+  "stainless steel", "dispenser", "organiser", "organizer", "lunch box", "lunchbox",
+  "container set", "kitchen scale", "thermometer", "timer",
+  // Other non-consumable hard goods
   "electric", "appliance", "candle", "stationery", "notebook", "battery", "charger",
   "earphone", "puzzle", "costume", "inflatable", "clothing", "shirt", "sock", "towel",
   "bedding", "pillow", "pillowcase", "hat ", "fertiliser", "garden", "tool kit",

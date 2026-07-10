@@ -13,7 +13,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 2. Launches a persistent browser and ensures you are logged into Woolworths (prompts in a visible window if needed; session is reused afterwards).
 3. For each plan entry:
    - Searches Woolworths for `term`.
-   - Chooses the best match. `preferred` entries bias toward the exact product name; only non-grocery hard goods (kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — food and everyday consumables (personal care, toiletries, cleaning) are all eligible.
+   - Chooses the best match. `preferred` entries bias toward the exact product name; only non-consumable hard goods (kitchen tools/gadgets and hard kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — produce, food and drink, and everyday consumables (personal care, toiletries, cleaning) are all eligible.
    - **`strict` preferred items** (marked `| strict` in `preferred-items.txt`) are the exception: only the exact preferred product name is acceptable. If it's not among the search results, the item is reported as `UNAVAILABLE` and nothing is added — no substitute is ever added for these.
    - Adds it to the cart, then estimates quantity (e.g. `6 roma tomatoes` → 6 when sold per piece; `1 tbsp sumac` → 1 jar) and bumps the quantity, capped by `MAX_QTY`.
 4. Reads the trolley total and writes a results report.

@@ -90,7 +90,16 @@ Added: 8   Cart now: 8 items, $34.20
 
 Edit `preferred-items.txt` — one Woolworths product name per line. Lines
 starting with `#` are ignored. These are the exact products bought whenever a
-Clove ingredient matches them by keyword.
+Clove or AnyList ingredient matches them by keyword.
+
+A line can add extras after `|`:
+
+```
+Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
+```
+
+- A comma-separated list of **aliases** — extra keywords (e.g. common misspellings) that should also route to this product.
+- The flag **`strict`** — only ever add this exact product; if it's not found in Woolworths search results, the item is reported as unavailable instead of a different product being substituted.
 
 To seed or refresh this list from everything you've bought before, run the
 [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md)

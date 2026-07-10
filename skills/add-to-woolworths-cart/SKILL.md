@@ -14,6 +14,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 3. For each plan entry:
    - Searches Woolworths for `term`.
    - Chooses the best match. `preferred` entries bias toward the exact product name; only non-grocery hard goods (kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — food and everyday consumables (personal care, toiletries, cleaning) are all eligible.
+   - **`strict` preferred items** (marked `| strict` in `preferred-items.txt`) are the exception: only the exact preferred product name is acceptable. If it's not among the search results, the item is reported as `UNAVAILABLE` and nothing is added — no substitute is ever added for these.
    - Adds it to the cart, then estimates quantity (e.g. `6 roma tomatoes` → 6 when sold per piece; `1 tbsp sumac` → 1 jar) and bumps the quantity, capped by `MAX_QTY`.
 4. Reads the trolley total and writes a results report.
 
@@ -31,7 +32,7 @@ node skills/add-to-woolworths-cart/scripts/add-to-woolworths-cart.js
 
 ## Output
 
-- **Results report**: `output/results.json` — per-item status (`ADDED` / `NO_RESULTS` / `ADD_FAILED`), chosen product, confidence, desired vs reached quantity, plus a trolley summary.
+- **Results report**: `output/results.json` — per-item status (`ADDED` / `NO_RESULTS` / `ADD_FAILED` / `UNAVAILABLE`), chosen product, confidence, desired vs reached quantity, plus a trolley summary.
 - **Chat/console**: a summary with counts and any low-confidence matches to review.
 
 ## Configuration
@@ -43,3 +44,4 @@ Reads from `.env`: `WOOLWORTHS_URL`, `PROFILE_DIR`, `HEADLESS`, `BROWSER_CHANNEL
 - First run must be **non-headless** (`HEADLESS=false`) so you can log into Woolworths once.
 - Quantity estimation is best-effort and reported per item — review `output/results.json` and adjust in your cart as needed.
 - Low-confidence and `very-low` matches are flagged so you can double-check the chosen product.
+- `UNAVAILABLE` items are listed separately in the summary — the exact preferred product wasn't found, and nothing was substituted.

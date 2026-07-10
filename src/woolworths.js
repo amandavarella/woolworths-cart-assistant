@@ -68,23 +68,32 @@ async function waitForResults(page, timeoutMs = 11000) {
   return 0;
 }
 
-function chooseProduct(products, kws, exactName) {
+function chooseProduct(products, kws, exactName, strict) {
   const ex = (exactName || "").toLowerCase();
   let bestPassing = null; // food-safe, score >= 0
   let bestAny = null; // highest keyword overlap regardless (best-effort fallback)
+  let bestExact = null; // food-safe candidate whose name contains the exact preferred name
 
   for (const name of products) {
     const pl = name.toLowerCase();
     let hits = 0;
     for (const kw of kws) if (pl.includes(kw)) hits++;
     const isNonFood = NONFOOD_WORDS.some((w) => pl.includes(w));
+    const isExact = !!ex && pl.includes(ex);
     let score = hits * 2;
-    if (ex && pl.includes(ex)) score += 5;
+    if (isExact) score += 5;
 
     if (!bestAny || hits > bestAny.hits) bestAny = { name, hits, score };
     if (!isNonFood) {
       if (!bestPassing || score > bestPassing.score) bestPassing = { name, hits, score };
+      if (isExact && (!bestExact || score > bestExact.score)) bestExact = { name, hits, score };
     }
+  }
+
+  if (strict) {
+    // Only the exact preferred product is acceptable — never substitute.
+    if (!bestExact) return null;
+    return { ...bestExact, confidence: "good" };
   }
 
   if (bestPassing && bestPassing.score >= 0) {
@@ -97,17 +106,23 @@ function chooseProduct(products, kws, exactName) {
 
 /**
  * Search Woolworths for `term`, choose the best product, and click Add to cart
- * (adds a single unit). Never silently skips: if results exist it adds the best
- * available match. Quantity is raised separately via setQuantity().
+ * (adds a single unit). Quantity is raised separately via setQuantity().
+ *
+ * Normally never silently skips: if results exist it adds the best available
+ * match. The exception is `strict` preferred items — for those, only the
+ * exact preferred product name is acceptable; if it's not among the results,
+ * this returns `UNAVAILABLE` instead of substituting a different product.
  */
-export async function addToCart(page, { base, term, ingredientName, exactName }) {
+export async function addToCart(page, { base, term, ingredientName, exactName, strict }) {
   await page.goto(SEARCH(base, term), { waitUntil: "domcontentloaded" });
   const count = await waitForResults(page);
   if (!count) return { status: "NO_RESULTS", term };
 
   const products = await page.evaluate(`(() => { ${COLLECT_FN}; return __collectAddButtons(); })()`);
   const kws = keywords(exactName || ingredientName || term);
-  const choice = chooseProduct(products, kws, exactName);
+  const choice = chooseProduct(products, kws, exactName, strict);
+
+  if (!choice) return { status: "UNAVAILABLE", term, exactName };
 
   // Click the chosen product's Add button (match by exact product name).
   const clicked = await page.evaluate((target) => {

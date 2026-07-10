@@ -50,6 +50,7 @@ export async function run(cfg = loadConfig()) {
         mode: strong ? "preferred" : "fallback",
         term: strong ? match.product : it.name,
         exactName: strong ? match.product : null,
+        strict: strong ? !!match.strict : false,
       };
 
       // De-dupe so the same product from two lists isn't added twice.
@@ -62,7 +63,7 @@ export async function run(cfg = loadConfig()) {
 
       console.log(
         strong
-          ? `  • "${it.name}" → preferred: ${match.product}`
+          ? `  • "${it.name}" → preferred: ${match.product}${match.strict ? " (strict — exact match only)" : ""}`
           : `  • "${it.name}" → no preferred match, will search generically`
       );
       plan.push(entry);

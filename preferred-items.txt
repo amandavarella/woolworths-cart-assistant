@@ -3,6 +3,15 @@
 # (by keyword overlap), this exact product is what gets added to your
 # Woolworths cart.
 # Lines starting with '#' and blank lines are ignored.
+#
+# Optional extras after the product name, separated by '|':
+#   - a comma-separated list of extra match keywords (aliases), e.g. common
+#     misspellings or generic terms that should also route to this product
+#   - the flag `strict`, meaning only ever add this exact product — if it's
+#     not found in Woolworths search results, the item is reported as
+#     unavailable instead of a different product being substituted
+#
+#   Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
 
 L'OR Espresso Decaf Ristretto Intensity 9 Coffee Pods
 Cobram Estate Classic Extra Virgin Olive Oil
@@ -127,7 +136,7 @@ McKenzie's Black Beans 375g
 Grenade Oreo Milk Chocolate Protein Bar 60g
 Maggie Beer Natural Beef Stock 500mL
 Twinings Pure Peppermint Tea Bags 40 pack
-Nestle Plaistowe Cocoa Powder Premium 180g
+Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
 Woolworths Sparkling Mineral Water 1.25L
 Golden Circle Apple Fruit Juice 2L
 U by Kotex Ultrathin Pads Regular With Wings Value 20 pack

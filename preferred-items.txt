@@ -3,6 +3,15 @@
 # (by keyword overlap), this exact product is what gets added to your
 # Woolworths cart.
 # Lines starting with '#' and blank lines are ignored.
+#
+# Optional extras after the product name, separated by '|':
+#   - a comma-separated list of extra match keywords (aliases), e.g. common
+#     misspellings or generic terms that should also route to this product
+#   - the flag `strict`, meaning only ever add this exact product — if it's
+#     not found in Woolworths search results, the item is reported as
+#     unavailable instead of a different product being substituted
+#
+#   Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
 
 L'OR Espresso Decaf Ristretto Intensity 9 Coffee Pods
 Cobram Estate Classic Extra Virgin Olive Oil
@@ -25,6 +34,7 @@ Jalna Pot Set Greek Style Natural Yoghurt 170g
 Woolworths Fresh Herb Coriander Bunch each
 Devondale Shredded Mozzarella Cheese 600g
 Mission Corn Chips Deli Round 500g
+Old El Paso Stand 'N Stuff Taco Kit Mexican Style 295g | taco kit, taco
 Remedy Organic Kombucha Mango Passion 750mL
 Remedy Kombucha Wild Berry 750mL
 Remedy Organic Kombucha Raspberry Lemonade 750mL
@@ -38,7 +48,7 @@ Woolworths Baby Leaf Spinach 120g
 Woolworths Onion Brown Bag 1kg
 Bananas Kids 5 pack
 Woolworths Washed Potatoes Bag 2kg
-Lime Fresh each
+Lime Fresh each | lime wedges
 Capsicum Green each
 Woolworths Iceberg Shredded Lettuce 200g
 Woolworths Fresh Pink Lady Apples Punnet 1kg
@@ -127,11 +137,12 @@ McKenzie's Black Beans 375g
 Grenade Oreo Milk Chocolate Protein Bar 60g
 Maggie Beer Natural Beef Stock 500mL
 Twinings Pure Peppermint Tea Bags 40 pack
-Nestle Plaistowe Cocoa Powder Premium 180g
+Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
 Woolworths Sparkling Mineral Water 1.25L
 Golden Circle Apple Fruit Juice 2L
 U by Kotex Ultrathin Pads Regular With Wings Value 20 pack
 Sukin Botanical Body Wash Lime & Coconut 1L
+My Soda Hydrate Nourishing Shampoo Refill For Dry & Damaged Hair 700mL
 Body Crystal Roll On Deodorant Botanica 80mL
 Natural State Vanilla Coconut & Lime Body Wash Refill 700mL
 Kleenex Complete Clean White Toilet Paper 24 pack
@@ -153,6 +164,7 @@ Fresh Eggplant
 Fresh Zucchini Green
 The Odd Bunch Avocado Prepacked
 The Odd Bunch Lime Prepacked
+The Odd Bunch Lemon Prepacked 500g | lemon juice
 Woolworths Capsicum Green
 Woolworths Fresh Continental Parsley Bunch
 Woolworths Fresh Herb Coriander Bunch

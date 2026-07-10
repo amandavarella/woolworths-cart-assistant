@@ -54,6 +54,7 @@ export async function run(cfg = loadConfig()) {
         term: p.term,
         ingredientName: p.name,
         exactName: p.exactName,
+        strict: p.strict,
       });
 
       if (res.status !== "ADDED") {
@@ -79,6 +80,7 @@ export async function run(cfg = loadConfig()) {
 
     const added = results.filter((r) => r.status === "ADDED");
     const lowConf = added.filter((r) => r.confidence !== "good");
+    const unavailable = results.filter((r) => r.status === "UNAVAILABLE");
     const failed = results.filter((r) => r.status !== "ADDED");
 
     console.log("\n========== SUMMARY ==========");
@@ -89,6 +91,10 @@ export async function run(cfg = loadConfig()) {
     if (lowConf.length) {
       console.log(`\nReview these low-confidence matches:`);
       for (const r of lowConf) console.log(`  • ${r.name} → ${r.product} (${r.confidence})`);
+    }
+    if (unavailable.length) {
+      console.log(`\nUnavailable (strict preferred item not found, nothing substituted):`);
+      for (const r of unavailable) console.log(`  • ${r.name} → wanted: ${r.exactName}`);
     }
     console.log(`\nFull details written to ${cfg.resultsFile}`);
 

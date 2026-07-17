@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
-import { loadPreferred, matchPreferred, isStrongMatch } from "../../../src/preferences.js";
+import { loadPreferred, matchPreferred, isStrongMatch, loadIgnore, isIgnored } from "../../../src/preferences.js";
 
 /**
  * Skill: map-preferred-items
@@ -33,7 +33,13 @@ export async function run(cfg = loadConfig()) {
   const preferred = loadPreferred(cfg.preferredFile);
   console.log(`Loaded ${preferred.length} preferred items from ${cfg.preferredFile}`);
 
+  const ignore = loadIgnore(cfg.ignoreFile);
+  if (ignore.length) {
+    console.log(`Loaded ${ignore.length} ignore item(s) from ${cfg.ignoreFile}`);
+  }
+
   const plan = [];
+  const ignored = [];
   const seen = new Set(); // de-dupe identical search targets across sources
 
   for (const { source, file } of sources) {
@@ -41,6 +47,11 @@ export async function run(cfg = loadConfig()) {
     console.log(`\nMapping ${items.length} item(s) from ${source}...`);
 
     for (const it of items) {
+      if (isIgnored(it.name, ignore)) {
+        console.log(`  • "${it.name}" → on ignore list, skipping`);
+        ignored.push({ source, name: it.name, ingredient: it.full });
+        continue;
+      }
       const match = matchPreferred(it.name, preferred);
       const strong = isStrongMatch(match, it.name);
       const entry = {
@@ -74,6 +85,8 @@ export async function run(cfg = loadConfig()) {
     mappedAt: new Date().toISOString(),
     sources: sources.map((s) => s.source),
     count: plan.length,
+    ignoredCount: ignored.length,
+    ignored,
     plan,
   };
   fs.writeFileSync(cfg.shoppingPlanFile, JSON.stringify(payload, null, 2));
@@ -82,6 +95,9 @@ export async function run(cfg = loadConfig()) {
       .map((s) => s.source)
       .join(" + ")}) to ${cfg.shoppingPlanFile}`
   );
+  if (ignored.length) {
+    console.log(`Ignored ${ignored.length} item(s): ${ignored.map((i) => i.name).join(", ")}`);
+  }
 
   return payload;
 }

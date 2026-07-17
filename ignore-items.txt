@@ -1,0 +1,12 @@
+# Items to ignore when building the shopping plan.
+#
+# Any ingredient from Clove or AnyList whose name matches a line below is
+# dropped during the map-preferred-items step: it is never mapped to a product
+# and never added to the Woolworths cart. Use this for things that show up on
+# your lists but that you don't want the assistant to buy (e.g. items you grow,
+# get elsewhere, or that Woolworths doesn't stock).
+#
+# One item per line. Lines starting with "#" are ignored. Matching is
+# case-insensitive and word-based, so "Cassava" also drops "cassava flour".
+
+Cassava

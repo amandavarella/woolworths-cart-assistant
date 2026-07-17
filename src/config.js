@@ -41,6 +41,9 @@ export function loadConfig() {
       (process.env.ORDER_URL && (process.env.ORDER_URL.match(/(\d{5,})/) || [])[1]) ||
       null,
     preferredFile: process.env.PREFERRED_ITEMS_FILE || "./preferred-items.txt",
+    // Items to drop from any source (Clove/AnyList) before mapping — never
+    // mapped to a product and never added to the cart.
+    ignoreFile: process.env.IGNORE_ITEMS_FILE || "./ignore-items.txt",
     maxQty: Number(process.env.MAX_QTY || 12),
     limit: process.env.LIMIT ? Number(process.env.LIMIT) : null,
     outputDir,

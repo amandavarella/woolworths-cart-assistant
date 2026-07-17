@@ -1,6 +1,11 @@
 # Woolworths Cart Assistant
 
-Reads your grocery ingredients from [Clove](https://clove.kitchen/groceries) and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart — automatically.
+Reads your grocery ingredients from Clove (pasted list) and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart, automatically.
+
+> **Clove is now paste-based.** The Clove website is no longer live, so by
+> default (`CLOVE_MODE=paste`) you paste your Clove groceries into a text file
+> (`clove-list.txt`) and the assistant reads it from there. The old browser
+> scraper is kept and can be re-enabled with `CLOVE_MODE=web`.
 
 This project is **agent-driven**: the work is split into small, composable *skills* that an AI agent (or you, from the command line) can run individually or chain end to end. See [`AGENTS.md`](./AGENTS.md) for the agent guidelines (`CLAUDE.md` is a symlink to it).
 
@@ -10,7 +15,7 @@ Each skill lives in `skills/<name>/` with a `SKILL.md` (instructions) and a `scr
 
 | Skill | What it does | Reads | Writes |
 |-------|--------------|-------|--------|
-| [`get-clove-items`](./skills/get-clove-items/SKILL.md) | Reads unchecked ingredients from Clove | Clove page | `output/clove-items.json` |
+| [`get-clove-items`](./skills/get-clove-items/SKILL.md) | Reads your Clove ingredients (pasted list by default; `CLOVE_MODE=web` for the legacy scraper) | `clove-list.txt` (or Clove page) | `output/clove-items.json` |
 | [`get-anylist-items`](./skills/get-anylist-items/SKILL.md) | Reads unchecked items from AnyList (via API, no browser) | AnyList API | `output/anylist-items.json` |
 | [`map-preferred-items`](./skills/map-preferred-items/SKILL.md) | Maps ingredients → preferred Woolworths products (merges Clove + AnyList) | `clove-items.json` + `anylist-items.json` + `preferred-items.txt` | `output/shopping-plan.json` |
 | [`add-to-woolworths-cart`](./skills/add-to-woolworths-cart/SKILL.md) | Adds the plan to your Woolworths cart | `shopping-plan.json` | `output/results.json` |
@@ -32,20 +37,38 @@ npm install
 cp .env.example .env       # adjust if you like; defaults work out of the box
 ```
 
+## Your Clove list (paste mode)
+
+Paste your Clove groceries into `clove-list.txt`, one ingredient per line:
+
+```
+1 lb baby potatoes
+6 roma tomatoes
+1 x 14 ounce can coconut milk
+```
+
+Blank lines and lines starting with `#` are ignored. If the file doesn't exist
+yet, the first run creates a template for you to fill in. The leading
+amount/unit is stripped automatically to match your preferred products (e.g.
+`baby potatoes`, `coconut milk`). This file is git-ignored.
+
 ## First run — log in once
 
-The browser skills check whether you're logged into Clove / Woolworths; if not,
-they open a visible window, wait for you to log in, then continue. Your session
-is saved in a dedicated profile (`PROFILE_DIR`), so future runs are automatic.
+The Woolworths skills check whether you're logged in; if not, they open a
+visible window, wait for you to log in, then continue. Your session is saved in
+a dedicated profile (`PROFILE_DIR`), so future runs are automatic.
 
 Run the whole pipeline once with a visible browser (`HEADLESS=false`, the
-default) to log into each site:
+default) to log into Woolworths:
 
 ```bash
 npm run shop
 ```
 
 After that, set `HEADLESS=true` in `.env` for unattended runs.
+
+> If you re-enable the legacy Clove scraper with `CLOVE_MODE=web`, that step
+> will also prompt you to log into Clove on its first run.
 
 > **AnyList** is read through its (unofficial) API, not a browser. Put your
 > `ANYLIST_EMAIL` and `ANYLIST_PASSWORD` in `.env` to enable it. If you don't
@@ -132,7 +155,9 @@ Woolworths Fresh Herb Coriander Bunch each
 | `PROFILE_DIR` | `./.browser-profile` | Where the logged-in browser session is stored |
 | `HEADLESS` | `false` | Run without a visible window (keep `false` for first login) |
 | `BROWSER_CHANNEL` | `chrome` | `chrome` uses installed Chrome; `""` uses bundled Chromium |
-| `CLOVE_URL` | `https://clove.kitchen/groceries` | Clove groceries page |
+| `CLOVE_MODE` | `paste` | `paste` reads your pasted list; `web` uses the legacy browser scraper |
+| `CLOVE_LIST_FILE` | `./clove-list.txt` | Paste-mode input: your Clove list, one ingredient per line (git-ignored) |
+| `CLOVE_URL` | `https://clove.kitchen/groceries` | Clove groceries page (only used when `CLOVE_MODE=web`) |
 | `ANYLIST_EMAIL` | _(unset)_ | AnyList account email (enables the AnyList source) |
 | `ANYLIST_PASSWORD` | _(unset)_ | AnyList account password |
 | `ANYLIST_LIST_NAME` | `Groceries` | Name of the AnyList list to read |

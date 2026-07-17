@@ -18,6 +18,9 @@ yarn-error.log*
 output/
 results.json
 
+# Pasted Clove list (personal weekly input — not committed)
+clove-list.txt
+
 # OS / IDE
 .DS_Store
 .vscode/

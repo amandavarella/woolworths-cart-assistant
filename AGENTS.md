@@ -12,7 +12,7 @@ Before running any skill, gather context:
 
 ## What this project does
 
-Reads grocery ingredients from [Clove](https://clove.kitchen/groceries) and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart. Nothing is ever checked out — the cart is only filled for you to review and order.
+Reads grocery ingredients from Clove and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart. Nothing is ever checked out; the cart is only filled for you to review and order. The Clove website is no longer live, so Clove items are read from a pasted list (`clove-list.txt`) by default (`CLOVE_MODE=paste`); the legacy browser scraper remains available via `CLOVE_MODE=web`.
 
 ## Skills
 
@@ -23,7 +23,7 @@ Skills are modular instruction packages in the `skills/` directory. Each skill h
 
 | Skill | Purpose | Browser | Hand-off |
 |-------|---------|---------|----------|
-| `get-clove-items` | Read unchecked ingredients from Clove | yes | writes `output/clove-items.json` |
+| `get-clove-items` | Read your Clove ingredients (default `CLOVE_MODE=paste` reads a pasted list; `CLOVE_MODE=web` uses the legacy scraper) | paste: no / web: yes | reads `clove-list.txt` (paste) or Clove page (web), writes `output/clove-items.json` |
 | `get-anylist-items` | Read unchecked items from AnyList (via API) | no (API) | writes `output/anylist-items.json` |
 | `map-preferred-items` | Map ingredients → preferred Woolworths products (merges Clove + AnyList) | no (pure logic) | reads `clove-items.json` + `anylist-items.json`, writes `output/shopping-plan.json` |
 | `add-to-woolworths-cart` | Add the plan to the Woolworths cart | yes | reads `shopping-plan.json`, writes `output/results.json` |
@@ -45,7 +45,7 @@ Common logic lives in `src/` and is imported by the skill scripts:
 
 - `src/config.js` — loads `.env` config and the `output/` hand-off file paths.
 - `src/browser.js` — persistent browser launch + interactive login helper.
-- `src/clove.js` — Clove extraction.
+- `src/clove.js` — Clove extraction (pasted-list parser + legacy web scraper).
 - `src/anylist.js` — AnyList API client (logs in with email/password, reads a list's items).
 - `src/preferences.js` — preferred-items matching.
 - `src/quantity.js` — quantity estimation from Clove amounts.

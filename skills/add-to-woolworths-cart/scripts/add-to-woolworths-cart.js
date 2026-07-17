@@ -93,8 +93,18 @@ export async function run(cfg = loadConfig()) {
       for (const r of lowConf) console.log(`  • ${r.name} → ${r.product} (${r.confidence})`);
     }
     if (unavailable.length) {
-      console.log(`\nUnavailable (strict preferred item not found, nothing substituted):`);
-      for (const r of unavailable) console.log(`  • ${r.name} → wanted: ${r.exactName}`);
+      console.log(`\nUnavailable (nothing suitable added):`);
+      for (const r of unavailable) {
+        const skipped = r.marketplaceFiltered
+          ? ` (skipped ${r.marketplaceFiltered} third-party "Sold by" listing${r.marketplaceFiltered === 1 ? "" : "s"})`
+          : "";
+        const why = r.exactName
+          ? `strict preferred item not found, nothing substituted; wanted: ${r.exactName}${skipped}`
+          : r.marketplaceFiltered
+            ? `only third-party marketplace listings found${skipped}`
+            : `no suitable Woolworths product found`;
+        console.log(`  • ${r.name} → ${why}`);
+      }
     }
     console.log(`\nFull details written to ${cfg.resultsFile}`);
 

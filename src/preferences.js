@@ -108,6 +108,41 @@ function tokenize(text) {
   return (text || "").toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
 }
 
+/**
+ * Load the ignore list — one item per line, `#` comments allowed. Returns an
+ * array of `{ raw, tokens }` where `tokens` are the singularised content words
+ * used for matching.
+ */
+export function loadIgnore(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return [];
+  const raw = fs.readFileSync(filePath, "utf8");
+  const seen = new Set();
+  const items = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const tokens = tokenize(t).map(singularize);
+    if (tokens.length) items.push({ raw: t, tokens });
+  }
+  return items;
+}
+
+/**
+ * Whether an ingredient name should be ignored. Matches when every word of an
+ * ignore entry is present (singularised, whole-word) in the ingredient, so
+ * "Cassava" also drops "cassava flour" but won't match unrelated items that
+ * merely share a substring.
+ */
+export function isIgnored(ingredientName, ignoreList) {
+  if (!ignoreList || !ignoreList.length) return false;
+  const toks = new Set(tokenize(ingredientName).map(singularize));
+  if (!toks.size) return false;
+  return ignoreList.some((item) => item.tokens.every((w) => toks.has(w)));
+}
+
 function singularize(w) {
   if (w.length > 4 && w.endsWith("ies")) return w.slice(0, -3) + "y";
   if (w.length > 4 && (w.endsWith("oes") || w.endsWith("ses") || w.endsWith("ches") || w.endsWith("shes"))) return w.slice(0, -2);

@@ -12,7 +12,7 @@ Open the Woolworths **My Lists → past shops → All Products** ("everything") 
 1. Launches the project's persistent Chrome profile (`PROFILE_DIR`) so your saved Woolworths login is reused. (Per the project's browser preference, this uses the project's own logged-in browser — **not** the Cursor/built-in browser.)
 2. Ensures you are logged into Woolworths. If not, it opens a visible window and waits for you to log in, then continues.
 3. Navigates `/shop/mylists/pastshops/everything?pageNumber=N`, reading the page count from the pager and walking every page.
-4. On each page it scrolls to mount lazily-rendered tiles, then collects each product name from its "Add to cart" button (piercing shadow DOM).
+4. On each page it scrolls to mount lazily-rendered tiles, then collects each product name from its "Add to cart" button (piercing shadow DOM). Third-party marketplace listings (tiles showing a "Sold by &lt;seller&gt;" label) are skipped, so they never enter your preferred-items list.
 5. De-duplicates the names (case-insensitive, order preserved) and writes a snapshot to `output/past-shop-items.json`.
 6. Appends product names that aren't already in `preferred-items.txt`, leaving existing entries untouched.
 

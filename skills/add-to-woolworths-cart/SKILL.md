@@ -14,6 +14,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 3. For each plan entry:
    - Searches Woolworths for `term`.
    - Chooses the best match. `preferred` entries bias toward the exact product name; only non-consumable hard goods (kitchen tools/gadgets and hard kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — produce, food and drink, and everyday consumables (personal care, toiletries, cleaning) are all eligible.
+   - **Third-party marketplace listings are always excluded.** Any result whose tile shows a "Sold by &lt;seller&gt;" label (Woolworths Everyday Market, fulfilled by a third-party seller) is never chosen. If every result for a term is a marketplace listing, the item is reported as `UNAVAILABLE` rather than adding a wrong product.
    - **`strict` preferred items** (marked `| strict` in `preferred-items.txt`) are the exception: only the exact preferred product name is acceptable. If it's not among the search results, the item is reported as `UNAVAILABLE` and nothing is added — no substitute is ever added for these.
    - Adds it to the cart, then estimates quantity (e.g. `6 roma tomatoes` → 6 when sold per piece; `1 tbsp sumac` → 1 jar) and bumps the quantity, capped by `MAX_QTY`.
 4. Reads the trolley total and writes a results report.
@@ -44,4 +45,4 @@ Reads from `.env`: `WOOLWORTHS_URL`, `PROFILE_DIR`, `HEADLESS`, `BROWSER_CHANNEL
 - First run must be **non-headless** (`HEADLESS=false`) so you can log into Woolworths once.
 - Quantity estimation is best-effort and reported per item — review `output/results.json` and adjust in your cart as needed.
 - Low-confidence and `very-low` matches are flagged so you can double-check the chosen product.
-- `UNAVAILABLE` items are listed separately in the summary — the exact preferred product wasn't found, and nothing was substituted.
+- `UNAVAILABLE` items are listed separately in the summary — either a `strict` preferred product wasn't found, or every result was a third-party "Sold by" marketplace listing. Nothing is substituted in these cases; the summary notes how many marketplace listings were skipped.

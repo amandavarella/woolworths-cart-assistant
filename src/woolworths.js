@@ -44,9 +44,29 @@ export async function isWoolworthsLoggedIn(page) {
   });
 }
 
+// In-page helper: decide whether a product tile is a third-party
+// "marketplace" listing (Woolworths Everyday Market), which renders a
+// "Sold by <seller>" label inside the tile. These are never Woolworths-
+// fulfilled groceries and are consistently the wrong product, so we exclude
+// them. Each tile's text is isolated in its own <wc-product-tile> shadow root,
+// so climbing ancestors from a button can't pick up a neighbouring tile's
+// label; we still stop at the tile boundary to be safe.
+const MARKETPLACE_FN = `
+function __isMarketplace(startEl) {
+  let p = startEl;
+  for (let k = 0; k < 8 && p; k++) {
+    if (/sold by/i.test(p.textContent || '')) return true;
+    if (p.tagName === 'WC-PRODUCT-TILE') break;
+    const host = (p.getRootNode && p.getRootNode() instanceof ShadowRoot) ? p.getRootNode().host : null;
+    p = p.parentElement || host;
+  }
+  return false;
+}`;
+
 // In-page helper: collect every "Add to cart" button (piercing shadow DOM)
-// together with its product name.
+// together with its product name and whether it's a marketplace listing.
 const COLLECT_FN = `
+${MARKETPLACE_FN}
 function __collectAddButtons() {
   const seen = new Set();
   const out = [];
@@ -59,7 +79,7 @@ function __collectAddButtons() {
         const txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
         if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
           const name = aria.replace(/^Add\\s+/i, '').replace(/\\s+to cart\\s*$/i, '').replace(/\\s+/g, ' ').trim();
-          out.push(name);
+          out.push({ name, marketplace: __isMarketplace(el) });
         }
       }
     }
@@ -83,7 +103,14 @@ function chooseProduct(products, kws, exactName, strict) {
   let bestAny = null; // highest keyword overlap regardless (best-effort fallback)
   let bestExact = null; // food-safe candidate whose name contains the exact preferred name
 
-  for (const name of products) {
+  // Never consider third-party marketplace ("Sold by …") listings — they are
+  // not Woolworths-fulfilled and are consistently the wrong product. If every
+  // result is a marketplace listing, we return null (reported as UNAVAILABLE)
+  // rather than substitute one in.
+  const candidates = products.filter((p) => !p.marketplace).map((p) => p.name);
+  if (!candidates.length) return null;
+
+  for (const name of candidates) {
     const pl = name.toLowerCase();
     let hits = 0;
     for (const kw of kws) if (pl.includes(kw)) hits++;
@@ -109,7 +136,7 @@ function chooseProduct(products, kws, exactName, strict) {
     return { ...bestPassing, confidence: bestPassing.score >= 2 ? "good" : "low" };
   }
   // Nothing passed the food filter — best-effort pick, flagged.
-  const fallback = bestAny || { name: products[0], hits: 0, score: 0 };
+  const fallback = bestAny || { name: candidates[0], hits: 0, score: 0 };
   return { ...fallback, confidence: "very-low" };
 }
 
@@ -129,9 +156,10 @@ export async function addToCart(page, { base, term, ingredientName, exactName, s
 
   const products = await page.evaluate(`(() => { ${COLLECT_FN}; return __collectAddButtons(); })()`);
   const kws = keywords(exactName || ingredientName || term);
+  const marketplaceCount = products.filter((p) => p.marketplace).length;
   const choice = chooseProduct(products, kws, exactName, strict);
 
-  if (!choice) return { status: "UNAVAILABLE", term, exactName };
+  if (!choice) return { status: "UNAVAILABLE", term, exactName, marketplaceFiltered: marketplaceCount };
 
   // Click the chosen product's Add button (match by exact product name).
   const clicked = await page.evaluate((target) => {
@@ -166,6 +194,7 @@ export async function addToCart(page, { base, term, ingredientName, exactName, s
     score: choice.score,
     confidence: choice.confidence,
     candidates: products.length,
+    marketplaceFiltered: marketplaceCount,
   };
 }
 
@@ -221,6 +250,7 @@ export async function setQuantity(page, productName, target, maxQty = 12) {
 // "Add to cart" button's aria-label (piercing shadow DOM) and stripping the
 // "Add " prefix / " to cart" suffix.
 const COLLECT_NAMES_FN = `
+${MARKETPLACE_FN}
 function __collectProductNames() {
   const out = [];
   const seen = new Set();
@@ -232,6 +262,7 @@ function __collectProductNames() {
         const aria = el.getAttribute('aria-label') || '';
         const txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
         if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
+          if (__isMarketplace(el)) continue; // skip third-party "Sold by" listings
           const name = aria
             .replace(/^Add\\s+/i, '')
             .replace(/\\s+to cart\\.?\\s*$/i, '')

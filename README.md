@@ -101,7 +101,17 @@ Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
 - A comma-separated list of **aliases** — extra keywords (e.g. common misspellings) that should also route to this product.
 - The flag **`strict`** — only ever add this exact product; if it's not found in Woolworths search results, the item is reported as unavailable instead of a different product being substituted.
 
-To seed or refresh this list from everything you've bought before, run the
+### Ignoring items
+
+Some things land on your Clove/AnyList lists that you never want the assistant
+to buy (things you grow, get elsewhere, or that Woolworths doesn't stock). List
+them in `ignore-items.txt` — one item per line, `#` comments ignored. Any
+ingredient matching a line (case-insensitive and word-based, so `Cassava` also
+drops `cassava flour`) is dropped during mapping: it is never matched to a
+product and never added to your cart. Ignored items are recorded under
+`ignored` in `output/shopping-plan.json`.
+
+To seed or refresh the preferred list from everything you've bought before, run the
 [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md)
 skill — it reads your Woolworths past-shops list (all pages) and appends any
 new products:
@@ -140,6 +150,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | `WOOLWORTHS_URL` | `https://www.woolworths.com.au` | Woolworths base URL |
 | `ORDER_ID` / `ORDER_URL` | _(unset)_ | A specific order for `sync-preferred-from-order` (else latest) |
 | `PREFERRED_ITEMS_FILE` | `./preferred-items.txt` | Your preferred products |
+| `IGNORE_ITEMS_FILE` | `./ignore-items.txt` | Items to drop before mapping (never bought) |
 | `MAX_QTY` | `12` | Safety cap on quantity per product |
 | `OUTPUT_DIR` | `./output` | Where skills write hand-off files and reports |
 | `LIMIT` | _(unset)_ | Process only the first N items per source (testing) |
@@ -150,6 +161,7 @@ Woolworths Fresh Herb Coriander Bunch each
 AGENTS.md                  # agent guidelines (CLAUDE.md is a symlink to this)
 CLAUDE.md -> AGENTS.md
 preferred-items.txt        # your preferred Woolworths products
+ignore-items.txt           # items to drop before mapping (never bought)
 src/                       # shared logic imported by the skill scripts
   config.js  browser.js  clove.js  anylist.js  preferences.js  quantity.js  woolworths.js
 skills/
@@ -166,5 +178,6 @@ output/                    # git-ignored hand-off files & reports
 ## Notes
 
 - Nothing is checked out — the app only fills your cart for you to review and order.
+- **Third-party marketplace items are never added.** Woolworths search results that are fulfilled by an outside seller (shown with a "Sold by &lt;seller&gt;" label — Woolworths Everyday Market) are always skipped, both when filling the cart and when syncing preferred products, since they're consistently the wrong product. If every result for an item is a marketplace listing, that item is reported as unavailable instead.
 - Quantity estimation is best-effort and printed per item; tweak in your cart as needed.
 - The browser profile holds your login — it's git-ignored; never commit it.

@@ -15,6 +15,79 @@
  * Section titles are <h2> elements, so they're naturally excluded.
  */
 
+/**
+ * Units that can appear in a pasted amount prefix. Kept in sync with the
+ * quantity estimator so "2 cloves garlic" or "1 x 14 ounce can coconut milk"
+ * strip down to just the ingredient name.
+ */
+const PASTE_UNIT_WORDS = new Set([
+  "tbsp", "tablespoon", "tablespoons", "tsp", "teaspoon", "teaspoons",
+  "cup", "cups", "pinch", "pinches", "handful", "handfuls", "dash", "dashes",
+  "clove", "cloves", "sprig", "sprigs", "knob", "knobs", "splash", "splashes",
+  "ml", "millilitre", "millilitres", "l", "litre", "litres",
+  "g", "gs", "gram", "grams", "kg", "lb", "lbs", "pound", "pounds",
+  "oz", "ounce", "ounces",
+  "can", "cans", "tin", "tins", "jar", "jars", "pkt", "packet", "packets",
+  "bottle", "bottles", "box", "boxes", "tub", "tubs", "bag", "bags",
+  "bunch", "bunches", "punnet", "punnets", "pack", "packs",
+]);
+
+const NUMBER_TOKEN_RE = /^(?:\d+(?:[.,]\d+)?|\d*[½⅓⅔¼¾⅕⅛]|\d+[⁄/]\d+)$/;
+
+/**
+ * Strip a leading amount from a pasted line to get the bare ingredient name.
+ *
+ * e.g. "1 lb baby potatoes" → "baby potatoes", "6 roma tomatoes" →
+ * "roma tomatoes", "1 × 14 ounce can coconut milk" → "coconut milk".
+ * Unit words are only stripped once a number has been seen, so a line like
+ * "cloves" (no amount) is left untouched.
+ */
+export function ingredientNameFromLine(line) {
+  const tokens = (line || "").trim().split(/\s+/).filter(Boolean);
+  let i = 0;
+  let sawNumber = false;
+  while (i < tokens.length) {
+    const tk = tokens[i];
+    const lower = tk.toLowerCase();
+    if (NUMBER_TOKEN_RE.test(tk)) {
+      sawNumber = true;
+      i++;
+      continue;
+    }
+    if (sawNumber && (lower === "x" || lower === "×" || lower === "of")) {
+      i++;
+      continue;
+    }
+    if (sawNumber && PASTE_UNIT_WORDS.has(lower.replace(/[.,]$/, ""))) {
+      i++;
+      continue;
+    }
+    break;
+  }
+  const name = tokens.slice(i).join(" ").trim();
+  return name || (line || "").trim();
+}
+
+/**
+ * Parse a pasted Clove list (plain text, one ingredient per line) into the same
+ * `{ full, name }` shape the browser scraper returns, so everything downstream
+ * is identical. Blank lines and lines starting with `#` are ignored, and
+ * duplicates (by full line) are de-duped.
+ */
+export function parsePastedIngredients(text) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of String(text || "").split(/\r?\n/)) {
+    const full = raw.replace(/\s+/g, " ").replace(/^[•\-\u2022\s]+/, "").trim();
+    if (!full || full.startsWith("#")) continue;
+    const key = full.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ full, name: ingredientNameFromLine(full) });
+  }
+  return out;
+}
+
 export async function isCloveLoggedIn(page) {
   return page.evaluate(() => {
     const txt = document.body ? document.body.innerText : "";

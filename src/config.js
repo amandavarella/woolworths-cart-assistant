@@ -14,7 +14,15 @@ export function loadConfig() {
     profileDir: process.env.PROFILE_DIR || "./.browser-profile",
     headless: String(process.env.HEADLESS || "false").toLowerCase() === "true",
     channel: process.env.BROWSER_CHANNEL || "chrome",
+    // How Clove items are collected. The Clove website is no longer live, so
+    // the default is "paste": you paste your Clove list into a text file
+    // (cloveListFile) and the skill parses it. Set CLOVE_MODE=web to re-enable
+    // the (still present) browser scraper.
+    cloveMode: (process.env.CLOVE_MODE || "paste").toLowerCase(),
     cloveUrl: process.env.CLOVE_URL || "https://clove.kitchen/groceries",
+    // Text file you paste your Clove ingredients into (one per line) when
+    // running in the default "paste" mode.
+    cloveListFile: process.env.CLOVE_LIST_FILE || "./clove-list.txt",
     // AnyList is read via its (unofficial) API using email/password — no
     // browser. Credentials come from .env; an encrypted token cache speeds up
     // later logins.

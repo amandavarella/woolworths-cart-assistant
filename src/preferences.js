@@ -171,6 +171,29 @@ function wordTokens(text) {
   return tokenize(text).filter((w) => w.length > 2).map(singularize);
 }
 
+const COLOR_WORDS = new Set(["white", "red", "green", "yellow", "brown", "black", "purple", "orange"]);
+
+/** The first colour word found in a token collection (Set or array), or null. */
+function colorOf(tokens) {
+  for (const t of tokens) if (COLOR_WORDS.has(t)) return t;
+  return null;
+}
+
+/**
+ * Whether `color` sits immediately next to an occurrence of `head` in the
+ * ordered `tokens` array — i.e. the colour actually describes that noun,
+ * rather than being an unrelated word elsewhere in a long product name (e.g.
+ * "Red" in "... Capsicum Corn Red Kidney Beans ..." does not describe the
+ * capsicum).
+ */
+function colorAdjacentTo(tokens, head, color) {
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] !== head) continue;
+    if (tokens[i - 1] === color || tokens[i + 1] === color) return true;
+  }
+  return false;
+}
+
 /**
  * Match a Clove ingredient against the preferred list.
  *
@@ -194,22 +217,35 @@ export function matchPreferred(ingredientName, preferredList) {
   if (!content.length) return null;
   const head = content[content.length - 1];
   const ingredientTokens = new Set(wordTokens(ingredientName));
+  const ingredientColor = colorOf(ingredientTokens);
 
   let best = null;
   const ingredientLower = ingredientName.toLowerCase();
   for (const item of preferredList) {
-    const nameToks = new Set(wordTokens(item.name));
+    const nameTokList = wordTokens(item.name);
+    const nameToks = new Set(nameTokList);
+
+    // A colour named in the ingredient (e.g. "red capsicum") must only match a
+    // preferred product where that same colour word sits right next to the
+    // head noun (e.g. "Capsicum Red"), never a differently-coloured,
+    // colour-unspecified, or merely-coincidental one (e.g. "Red" in "...
+    // Capsicum Corn Red Kidney Beans..." doesn't describe the capsicum). An
+    // ingredient with no colour still falls through to the default preferred
+    // product as before.
+    if (ingredientColor && !colorAdjacentTo(nameTokList, head, ingredientColor)) continue;
 
     let gated = nameToks.has(head);
+    // Aliases can gate an otherwise-unmatched product AND, when they fully
+    // match, add a bonus even for products already gated by name — this lets
+    // an ambiguous bare word (e.g. "lemon", "milk") be steered to the right
+    // product among several same-scoring candidates by declaring it as an
+    // alias on the one you actually want.
     let aliasBonus = 0;
-    if (!gated) {
-      for (const alias of item.aliases || []) {
-        const aliasToks = wordTokens(alias);
-        if (aliasToks.length && aliasToks.every((w) => ingredientTokens.has(w))) {
-          gated = true;
-          aliasBonus = 5;
-          break;
-        }
+    for (const alias of item.aliases || []) {
+      const aliasToks = wordTokens(alias);
+      if (aliasToks.length && aliasToks.every((w) => ingredientTokens.has(w))) {
+        gated = true;
+        aliasBonus = Math.max(aliasBonus, 5);
       }
     }
     if (!gated) continue;

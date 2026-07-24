@@ -14,6 +14,8 @@ The orchestrator. Runs all source + processing skills in order, passing data bet
 
 Both Clove and AnyList are read and matched against your preferred products before anything touches the cart. AnyList is read via its API (credentials in `.env`), not a browser. The AnyList step is best-effort: if it fails (e.g. missing credentials), the pipeline logs a warning and continues with the Clove items. If **both** sources are empty, the pipeline stops before mapping.
 
+Any ingredient/item names (from either source) are automatically translated and localized to Australian English as part of the source steps, before matching ever sees them: `portuguese → Australian English` and `US English → Australian English` — see [`get-clove-items`](../get-clove-items/SKILL.md#automatic-translation). Disable the translation half with `AUTO_TRANSLATE=false` (the Australian-English glossary half always runs regardless).
+
 ## How an agent should run this
 
 Either run the orchestrator script directly (recommended), or execute each skill in sequence by following each skill's own `SKILL.md`:

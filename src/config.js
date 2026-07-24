@@ -23,6 +23,10 @@ export function loadConfig() {
     // Text file you paste your Clove ingredients into (one per line) when
     // running in the default "paste" mode.
     cloveListFile: process.env.CLOVE_LIST_FILE || "./clove-list.txt",
+    // Automatically translate non-English ingredient names (e.g. Portuguese)
+    // to English before preferred-item matching and Woolworths search, using
+    // a free translation service (no API key). Set to "false" to disable.
+    autoTranslate: String(process.env.AUTO_TRANSLATE ?? "true").toLowerCase() !== "false",
     // AnyList is read via its (unofficial) API using email/password — no
     // browser. Credentials come from .env; an encrypted token cache speeds up
     // later logins.

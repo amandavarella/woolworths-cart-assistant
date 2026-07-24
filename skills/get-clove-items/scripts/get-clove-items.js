@@ -9,6 +9,7 @@ import {
   isCloveLoggedIn,
   parsePastedIngredients,
 } from "../../../src/clove.js";
+import { translateNonEnglishItems } from "../../../src/translate.js";
 
 const PASTE_TEMPLATE = `# Paste your Clove groceries list here, one ingredient per line.
 # Lines starting with "#" and blank lines are ignored.
@@ -46,11 +47,25 @@ export async function run(cfg = loadConfig()) {
   console.log(`Found ${limited.length} unchecked ingredient(s):`);
   for (const it of limited) console.log(`  • ${it.full}`);
 
+  // Translate any non-English ingredient names to English (e.g. a Portuguese
+  // paste) before they ever reach preferred-item matching or Woolworths
+  // search — both are English-only, so a foreign ingredient would otherwise
+  // be searched for literally and match unrelated products.
+  const translated = cfg.autoTranslate
+    ? await translateNonEnglishItems(limited, { log: (msg) => console.log(msg) })
+    : limited;
+  const translatedCount = translated.filter((it) => it.translated).length;
+  if (translatedCount) {
+    console.log(
+      `\nTranslated ${translatedCount} non-English ingredient(s) to English (see above).`
+    );
+  }
+
   const payload = {
     extractedAt: new Date().toISOString(),
     source: cfg.cloveMode === "web" ? "clove-web" : "clove-paste",
-    count: limited.length,
-    items: limited,
+    count: translated.length,
+    items: translated,
   };
   fs.writeFileSync(cfg.cloveItemsFile, JSON.stringify(payload, null, 2));
   console.log(`\nWrote ${limited.length} item(s) to ${cfg.cloveItemsFile}`);

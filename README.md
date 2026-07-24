@@ -52,15 +52,21 @@ yet, the first run creates a template for you to fill in. The leading
 amount/unit is stripped automatically to match your preferred products (e.g.
 `baby potatoes`, `coconut milk`). This file is git-ignored.
 
-**Ingredients in another language are translated automatically.** If you
-paste a list with some non-English lines (e.g. Portuguese), each one is
-detected and translated to English before matching or search ever sees it —
-Woolworths' catalogue and this project's preferred-item matching are both
-English-only, so an untranslated ingredient would otherwise search literally
-and match unrelated products. This uses a free, unofficial Google Translate
-client (no API key) in a single batched request per run, fails safe (falls
-back to the original text) if the translation service is unreachable, and
-can be turned off with `AUTO_TRANSLATE=false`. See
+**Ingredients are translated/localized to Australian English automatically.**
+The path is `portuguese → Australian English` and `US English → Australian
+English`. If you paste a list with non-English lines (e.g. Portuguese), each
+one is detected and translated to English before matching or search ever
+sees it — Woolworths' catalogue and this project's preferred-item matching
+are both English-only, so an untranslated ingredient would otherwise search
+literally and match unrelated products. Every ingredient (translated or
+already English) is then run through a small Australian-English glossary
+that swaps American/generic grocery terms for the Australian ones Woolworths
+actually uses (e.g. "cilantro" → "coriander", "bell pepper" → "capsicum",
+"ground beef" → "beef mince"). Translation uses a free, unofficial Google
+Translate client (no API key) in a single batched request per run and fails
+safe (falls back to the original text) if unreachable; the Australian
+English glossary always runs regardless, since it needs no network. Turn off
+just the translation step with `AUTO_TRANSLATE=false`. See
 [`get-clove-items`](./skills/get-clove-items/SKILL.md#automatic-translation)
 for details. The same applies to AnyList item names.
 
@@ -180,7 +186,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | `CLOVE_MODE` | `paste` | `paste` reads your pasted list; `web` uses the legacy browser scraper |
 | `CLOVE_LIST_FILE` | `./clove-list.txt` | Paste-mode input: your Clove list, one ingredient per line (git-ignored) |
 | `CLOVE_URL` | `https://clove.kitchen/groceries` | Clove groceries page (only used when `CLOVE_MODE=web`) |
-| `AUTO_TRANSLATE` | `true` | Translate non-English Clove/AnyList ingredient names to English before matching |
+| `AUTO_TRANSLATE` | `true` | Translate non-English Clove/AnyList ingredient names to English before matching; the Australian-English glossary step always runs regardless |
 | `ANYLIST_EMAIL` | _(unset)_ | AnyList account email (enables the AnyList source) |
 | `ANYLIST_PASSWORD` | _(unset)_ | AnyList account password |
 | `ANYLIST_LIST_NAME` | `Groceries` | Name of the AnyList list to read |

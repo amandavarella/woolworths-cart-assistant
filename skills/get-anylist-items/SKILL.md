@@ -14,7 +14,7 @@ It uses the [`anylist`](https://github.com/kevdliu/anylist) package, an unoffici
 1. Logs into AnyList with `ANYLIST_EMAIL` / `ANYLIST_PASSWORD`. The encrypted token cache (`.anylist_credentials`, git-ignored) means only the first run does a full login.
 2. Fetches your lists and selects the one named by `ANYLIST_LIST_NAME` (default **Groceries**).
 3. Reads each **unchecked** item as `{ full, name }` — `name` is the bare item name (used for matching), `full` includes the quantity when AnyList has one. Crossed-off (checked) items are skipped.
-4. **Non-English item names are auto-translated to English** — same behaviour as `get-clove-items` (see that skill's SKILL.md for details): a single batched, free translation request, fails safe on error, disable with `AUTO_TRANSLATE=false`.
+4. **Item names are auto-translated/localized to Australian English** — same behaviour as `get-clove-items` (see that skill's SKILL.md for details): non-English names are translated to English via a single batched, free translation request (fails safe on error, disable with `AUTO_TRANSLATE=false`), then every name (translated or already English) is run through a curated Australian-English glossary (e.g. "bell pepper" → "capsicum"), which always runs regardless of `AUTO_TRANSLATE`.
 5. Writes the results to the hand-off file.
 
 ## Usage
@@ -54,7 +54,7 @@ Reads from `.env` (see `.env.example`):
 | `ANYLIST_PASSWORD` | _(required)_ | Your AnyList account password |
 | `ANYLIST_LIST_NAME` | `Groceries` | Name of the list to read |
 | `ANYLIST_CREDENTIALS_FILE` | `./.anylist_credentials` | Encrypted token cache (git-ignored) |
-| `AUTO_TRANSLATE` | `true` | Translate non-English item names to English before matching |
+| `AUTO_TRANSLATE` | `true` | Translate non-English item names to English before matching; the Australian-English glossary step always runs regardless |
 | `LIMIT` | _(unset)_ | Process only the first N items |
 | `OUTPUT_DIR` | `./output` | Where the hand-off file is written |
 

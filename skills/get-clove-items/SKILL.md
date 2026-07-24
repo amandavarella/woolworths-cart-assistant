@@ -30,35 +30,54 @@ There are two modes, chosen by `CLOVE_MODE`:
 2. Each line is parsed into `{ full, name }` where `full` is the whole line and
    `name` is the ingredient with any leading amount/unit stripped (e.g.
    `baby potatoes`, `coconut milk`).
-3. **Non-English ingredients are auto-translated to English** (see below).
+3. **Ingredients are auto-translated/localized to Australian English** (see below).
 4. Results are written to the hand-off file.
 
 ## Automatic translation
 
+The translation path is:
+
+- **Portuguese → Australian English** (or any other non-English language → Australian English)
+- **US English → Australian English**
+
 Woolworths' catalogue and this project's preferred-item matching are both
 English-only, so an ingredient pasted in another language (e.g. Portuguese)
-would otherwise be searched for literally and match unrelated products.
-Before the hand-off file is written, every ingredient is auto-detected and
-any non-English ones are translated to English in a single batched request
-(via [`google-translate-api-x`](https://www.npmjs.com/package/google-translate-api-x),
-a free, unofficial Google Translate client — no API key needed). English
-ingredients pass through untouched.
+would otherwise be searched for literally and match unrelated products, and
+an ingredient in American grocery terminology (e.g. "cilantro", "bell
+pepper") would otherwise miss Woolworths' Australian product names. Before
+the hand-off file is written, this runs in two steps:
 
-- A translated item keeps its original text too: `{ full, name, translated: true, originalFull, originalName }`.
+1. **Foreign language → English.** Every ingredient is auto-detected and any
+   non-English ones are translated to English in a single batched request
+   (via [`google-translate-api-x`](https://www.npmjs.com/package/google-translate-api-x),
+   a free, unofficial Google Translate client — no API key needed). English
+   ingredients pass through this step untouched.
+2. **English → Australian English.** Every ingredient (whether just
+   translated or already English) is then run through a small curated
+   glossary (`src/translate.js`) that swaps American/generic grocery terms
+   for the Australian ones Woolworths actually lists products under — e.g.
+   "cilantro" → "coriander", "bell pepper" → "capsicum", "ground beef" →
+   "beef mince", "all purpose flour" → "plain flour". This step needs no
+   network and always runs, even if step 1 is disabled or fails.
+
+- A translated/localized item keeps its original text too: `{ full, name, translated: true, originalFull, originalName }`.
 - Only the trailing amount-stripped `name` is translated; the leading
   amount/unit in `full` (e.g. `"2 "`) is preserved, so quantity estimation
   still works on the translated line.
-- Set `AUTO_TRANSLATE=false` in `.env` to disable this step (e.g. if you're
+- Set `AUTO_TRANSLATE=false` in `.env` to disable step 1 (e.g. if you're
   offline or the translation endpoint is unavailable) — non-English
-  ingredients then flow through unchanged, same as before this feature.
+  ingredients then flow through unchanged, but the Australian English
+  glossary (step 2) still applies to any already-English text.
 - **Fails safe**: if the translation request errors (offline, rate-limited,
-  endpoint change), a warning is logged and the original ingredients are used
-  as-is — a flaky translation call never breaks the pipeline.
-- This is best-effort machine translation, not a curated glossary — it can
+  endpoint change), a warning is logged, the Australian English glossary
+  still runs on its own, and translation for foreign-language items falls
+  back to the original text — a flaky translation call never breaks the
+  pipeline.
+- Step 1 is best-effort machine translation, not a curated glossary — it can
   produce imperfect results for local terminology (e.g. Portuguese
-  "pimentão" → "pepper" rather than the Australian "capsicum"). It still
-  reliably beats matching against the untranslated foreign text, which
-  Woolworths' search and this project's matching cannot use at all.
+  "pimentão" → "pepper" rather than "capsicum"). The step 2 glossary catches
+  the most common of these gaps (e.g. bare "red pepper"/"yellow pepper" →
+  "red capsicum"/"yellow capsicum"), but is not exhaustive.
 - Applies in both paste and web mode, since it runs after ingredients are
   parsed/extracted either way.
 
@@ -107,6 +126,13 @@ LIMIT=5 node skills/get-clove-items/scripts/get-clove-items.js
       "translated": true,
       "originalFull": "1 vidro leite de coco",
       "originalName": "vidro leite de coco"
+    },
+    {
+      "full": "2 capsicums",
+      "name": "capsicums",
+      "translated": true,
+      "originalFull": "2 bell peppers",
+      "originalName": "bell peppers"
     }
   ]
 }

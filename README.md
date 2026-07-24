@@ -27,7 +27,7 @@ The browser skills each open their own window and reuse a saved login profile, s
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 21+
 - Google Chrome installed (the default; or set `BROWSER_CHANNEL=""` to use Playwright's bundled Chromium)
 
 ## Setup
@@ -51,6 +51,18 @@ Blank lines and lines starting with `#` are ignored. If the file doesn't exist
 yet, the first run creates a template for you to fill in. The leading
 amount/unit is stripped automatically to match your preferred products (e.g.
 `baby potatoes`, `coconut milk`). This file is git-ignored.
+
+**Ingredients in another language are translated automatically.** If you
+paste a list with some non-English lines (e.g. Portuguese), each one is
+detected and translated to English before matching or search ever sees it —
+Woolworths' catalogue and this project's preferred-item matching are both
+English-only, so an untranslated ingredient would otherwise search literally
+and match unrelated products. This uses a free, unofficial Google Translate
+client (no API key) in a single batched request per run, fails safe (falls
+back to the original text) if the translation service is unreachable, and
+can be turned off with `AUTO_TRANSLATE=false`. See
+[`get-clove-items`](./skills/get-clove-items/SKILL.md#automatic-translation)
+for details. The same applies to AnyList item names.
 
 ## First run — log in once
 
@@ -168,6 +180,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | `CLOVE_MODE` | `paste` | `paste` reads your pasted list; `web` uses the legacy browser scraper |
 | `CLOVE_LIST_FILE` | `./clove-list.txt` | Paste-mode input: your Clove list, one ingredient per line (git-ignored) |
 | `CLOVE_URL` | `https://clove.kitchen/groceries` | Clove groceries page (only used when `CLOVE_MODE=web`) |
+| `AUTO_TRANSLATE` | `true` | Translate non-English Clove/AnyList ingredient names to English before matching |
 | `ANYLIST_EMAIL` | _(unset)_ | AnyList account email (enables the AnyList source) |
 | `ANYLIST_PASSWORD` | _(unset)_ | AnyList account password |
 | `ANYLIST_LIST_NAME` | `Groceries` | Name of the AnyList list to read |

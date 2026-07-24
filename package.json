@@ -13,11 +13,12 @@
     "sync-order": "node skills/sync-preferred-from-order/scripts/sync-preferred-from-order.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=21"
   },
   "dependencies": {
     "anylist": "github:kevdliu/anylist",
     "dotenv": "^16.4.5",
+    "google-translate-api-x": "^10.7.3",
     "playwright": "^1.49.0"
   }
 }

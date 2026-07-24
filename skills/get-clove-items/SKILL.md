@@ -30,7 +30,37 @@ There are two modes, chosen by `CLOVE_MODE`:
 2. Each line is parsed into `{ full, name }` where `full` is the whole line and
    `name` is the ingredient with any leading amount/unit stripped (e.g.
    `baby potatoes`, `coconut milk`).
-3. Results are written to the hand-off file.
+3. **Non-English ingredients are auto-translated to English** (see below).
+4. Results are written to the hand-off file.
+
+## Automatic translation
+
+Woolworths' catalogue and this project's preferred-item matching are both
+English-only, so an ingredient pasted in another language (e.g. Portuguese)
+would otherwise be searched for literally and match unrelated products.
+Before the hand-off file is written, every ingredient is auto-detected and
+any non-English ones are translated to English in a single batched request
+(via [`google-translate-api-x`](https://www.npmjs.com/package/google-translate-api-x),
+a free, unofficial Google Translate client — no API key needed). English
+ingredients pass through untouched.
+
+- A translated item keeps its original text too: `{ full, name, translated: true, originalFull, originalName }`.
+- Only the trailing amount-stripped `name` is translated; the leading
+  amount/unit in `full` (e.g. `"2 "`) is preserved, so quantity estimation
+  still works on the translated line.
+- Set `AUTO_TRANSLATE=false` in `.env` to disable this step (e.g. if you're
+  offline or the translation endpoint is unavailable) — non-English
+  ingredients then flow through unchanged, same as before this feature.
+- **Fails safe**: if the translation request errors (offline, rate-limited,
+  endpoint change), a warning is logged and the original ingredients are used
+  as-is — a flaky translation call never breaks the pipeline.
+- This is best-effort machine translation, not a curated glossary — it can
+  produce imperfect results for local terminology (e.g. Portuguese
+  "pimentão" → "pepper" rather than the Australian "capsicum"). It still
+  reliably beats matching against the untranslated foreign text, which
+  Woolworths' search and this project's matching cannot use at all.
+- Applies in both paste and web mode, since it runs after ingredients are
+  parsed/extracted either way.
 
 ## Web mode (legacy)
 
@@ -70,14 +100,21 @@ LIMIT=5 node skills/get-clove-items/scripts/get-clove-items.js
   "count": 8,
   "items": [
     { "full": "1 lb baby potatoes", "name": "baby potatoes" },
-    { "full": "6 roma tomatoes", "name": "roma tomatoes" }
+    { "full": "6 roma tomatoes", "name": "roma tomatoes" },
+    {
+      "full": "1 coconut milk",
+      "name": "coconut milk",
+      "translated": true,
+      "originalFull": "1 vidro leite de coco",
+      "originalName": "vidro leite de coco"
+    }
   ]
 }
 ```
 
 ## Configuration
 
-Reads from `.env` (see `.env.example`): `CLOVE_MODE`, `CLOVE_LIST_FILE`, `CLOVE_URL`, `PROFILE_DIR`, `HEADLESS`, `BROWSER_CHANNEL`, `LIMIT`, `OUTPUT_DIR`.
+Reads from `.env` (see `.env.example`): `CLOVE_MODE`, `CLOVE_LIST_FILE`, `CLOVE_URL`, `PROFILE_DIR`, `HEADLESS`, `BROWSER_CHANNEL`, `AUTO_TRANSLATE`, `LIMIT`, `OUTPUT_DIR`.
 
 ## Notes
 

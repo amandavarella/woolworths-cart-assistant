@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
 import { fetchItems } from "../../../src/anylist.js";
+import { translateNonEnglishItems } from "../../../src/translate.js";
 
 /**
  * Skill: get-anylist-items
@@ -25,9 +26,22 @@ export async function run(cfg = loadConfig()) {
   console.log(`Found ${items.length} unchecked item(s):`);
   for (const it of items) console.log(`  • ${it.full}`);
 
-  const payload = { extractedAt: new Date().toISOString(), count: items.length, items };
+  // Translate any non-English item names to English (e.g. a Portuguese
+  // entry) before they ever reach preferred-item matching or Woolworths
+  // search — both are English-only.
+  const translated = cfg.autoTranslate
+    ? await translateNonEnglishItems(items, { log: (msg) => console.log(msg) })
+    : items;
+  const translatedCount = translated.filter((it) => it.translated).length;
+  if (translatedCount) {
+    console.log(
+      `\nTranslated ${translatedCount} non-English item(s) to English (see above).`
+    );
+  }
+
+  const payload = { extractedAt: new Date().toISOString(), count: translated.length, items: translated };
   fs.writeFileSync(cfg.anylistItemsFile, JSON.stringify(payload, null, 2));
-  console.log(`\nWrote ${items.length} item(s) to ${cfg.anylistItemsFile}`);
+  console.log(`\nWrote ${translated.length} item(s) to ${cfg.anylistItemsFile}`);
 
   return payload;
 }

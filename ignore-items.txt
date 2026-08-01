@@ -8,5 +8,14 @@
 #
 # One item per line. Lines starting with "#" are ignored. Matching is
 # case-insensitive and word-based, so "Cassava" also drops "cassava flour".
+#
+# A line written as "category: <name>" drops every AnyList item filed under that
+# category instead of a single item, so anything you later add to that category
+# is skipped too.
 
 Cassava
+
+# Non-grocery AnyList aisles — bought in person, never at Woolworths.
+category: officeworks
+category: pharmacy
+category: chemist

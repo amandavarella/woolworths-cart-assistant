@@ -9,8 +9,11 @@
  * Items are returned in the same shape as the Clove extractor so the two
  * sources are interchangeable downstream: `{ full, name }` per item. AnyList
  * items are usually just a product name (optionally with a quantity), so:
- *   - `name` is the bare item name (used for preferred-item matching), and
- *   - `full` includes the quantity when AnyList has one (e.g. "2 milk").
+ *   - `name` is the bare item name (used for preferred-item matching),
+ *   - `full` includes the quantity when AnyList has one (e.g. "2 milk"), and
+ *   - `category` is the AnyList category the item is filed under (e.g.
+ *     "produce", "officeworks"), which the ignore list can match on so a whole
+ *     non-grocery aisle can be skipped.
  */
 import AnyList from "anylist";
 
@@ -20,7 +23,7 @@ const normalise = (s) => (s || "").replace(/\s+/g, " ").trim();
  * Log into AnyList, read the named list, and return its unchecked items.
  *
  * @param {object} cfg loaded config (needs anylistEmail/Password, list name)
- * @returns {Promise<Array<{full: string, name: string}>>}
+ * @returns {Promise<Array<{full: string, name: string, category: string|null}>>}
  */
 export async function fetchItems(cfg) {
   if (!cfg.anylistEmail || !cfg.anylistPassword) {
@@ -57,11 +60,12 @@ export async function fetchItems(cfg) {
       if (!name) continue;
       const qty = normalise(String(it.quantity ?? ""));
       const full = qty ? `${qty} ${name}` : name;
+      const category = normalise(it.categoryMatchId || "").toLowerCase() || null;
 
       const key = name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      items.push({ full, name });
+      items.push({ full, name, category });
     }
 
     return items;

@@ -355,6 +355,9 @@ function colorAdjacentTo(tokens, head, color) {
  * whatever it scores: "raw prawns" never resolves to a cooked product.
  *
  * Among gated candidates, the one overlapping the most content words wins.
+ * Naming the head noun in the product's own name scores higher than being
+ * gated by an alias alone, so an ingredient asking for a *pesto* prefers a
+ * product that is one over a broad "tomato" alias on something else.
  *
  * Returns { product, score, hits, head, strict } or null.
  */
@@ -383,7 +386,8 @@ export function matchPreferred(ingredientName, preferredList) {
 
     if (conflictsWithProfile(prep, item.name)) continue;
 
-    let gated = nameToks.has(head);
+    const namesHead = nameToks.has(head);
+    let gated = namesHead;
     // Aliases can gate an otherwise-unmatched product AND, when they fully
     // match, add a bonus even for products already gated by name — this lets
     // an ambiguous bare word (e.g. "lemon", "milk") be steered to the right
@@ -402,7 +406,11 @@ export function matchPreferred(ingredientName, preferredList) {
     const toks = productTokenSet(item);
     let hits = 0;
     for (const w of content) if (toks.has(w)) hits++;
-    let score = hits * 2 + aliasBonus + profileAffinity(prep, item.name) * 3;
+    // Being the thing that was asked for outranks merely being routed here by
+    // an alias, but stays below the alias bonus itself so a deliberate alias
+    // still steers between products that all name the head noun.
+    const headBonus = namesHead ? 4 : 0;
+    let score = hits * 2 + aliasBonus + headBonus + profileAffinity(prep, item.name) * 3;
     if (item.name.toLowerCase().includes(ingredientLower)) score += 5;
 
     if (!best || score > best.score || (score === best.score && item.name.length < best.product.length)) {

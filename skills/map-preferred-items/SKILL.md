@@ -25,16 +25,24 @@ This step is **deterministic and offline** — safe to re-run and inspect withou
 
 ## Preparation states
 
-Some words describe how a product is prepared, and swapping them silently
-produces the wrong thing. These are handled in two ways:
+Some words describe what a product *is*, and swapping them silently produces
+the wrong thing. These are handled in two ways:
 
 - **Mutually exclusive states** are a hard gate. A preferred product naming a
   different state than the ingredient is skipped no matter how well the rest of
   the name matches, so "Tassal Raw Aussie Tiger Prawns" can never resolve to
-  "Woolworths Thawed **Cooked** Jumbo Tiger Prawns". The groups are
-  *raw / uncooked* vs *cooked / precooked*, and *peeled / shelled* vs
-  *unpeeled / unshelled*. Matching is whole-word, so "uncooked" counts as raw
-  rather than as cooked, and "unpeeled" doesn't satisfy "peeled".
+  "Woolworths Thawed **Cooked** Jumbo Tiger Prawns". The groups are:
+
+  | Group | States |
+  |-------|--------|
+  | doneness | *raw / uncooked* vs *cooked / precooked* |
+  | shell | *peeled / shelled* vs *unpeeled / unshelled* |
+  | protein | *beef / veal*, *chicken*, *lamb*, *pork / ham / bacon*, *turkey*, *fish / seafood*, *vegetable* |
+
+  Matching is whole-word, so "uncooked" counts as raw rather than as cooked,
+  and "unpeeled" doesn't satisfy "peeled". A product naming the wanted state
+  *and* another one is still eligible, so "Beef & Lamb Meatballs" can fill a
+  beef ingredient.
 - **Preparation attributes** (`deveined`, `butterflied`, `marinated`, `smoked`,
   `tail off` / `tail on`, `skinless`, `boneless`) are a strong preference, not a
   requirement: a product that also names them scores higher, but one that is
@@ -43,6 +51,10 @@ produces the wrong thing. These are handled in two ways:
 An ingredient that names no state is unaffected, and where the ingredient is
 silent but the preferred product isn't, the preferred product's own state is
 what later substitutions must respect.
+
+The protein group in particular outranks any brand preference: a favourite
+brand's *beef* stock is never used for *chicken* stock. Where a brand doesn't
+make every variety, add a separate preferred line per protein.
 
 ## Usage
 
@@ -109,6 +121,6 @@ Reads from `.env`: `PREFERRED_ITEMS_FILE`, `IGNORE_ITEMS_FILE`, `OUTPUT_DIR`.
 - Edit `preferred-items.txt` to control exactly which Woolworths product is bought for a given ingredient.
 - Edit `ignore-items.txt` to drop items you never want bought (e.g. things you grow or get elsewhere). One entry per line; matching is case-insensitive and word-based. Use `category: <name>` to drop an entire AnyList category (e.g. Officeworks, Pharmacy, Chemist) rather than listing each item.
 - Matching requires the ingredient's head noun (its last meaningful word) to appear in the preferred product or one of its aliases, which avoids spurious matches on generic descriptors like "baby" or "fresh".
-- Preparation states (raw vs cooked, peeled vs unpeeled) are never swapped; keep a separate preferred line for each state you buy, e.g. a raw prawn product and a cooked one, and the right one is picked per ingredient.
+- Preparation states (raw vs cooked, peeled vs unpeeled) and the protein (beef, chicken, lamb, pork, turkey, fish, vegetable) are never swapped; keep a separate preferred line for each variety you buy, e.g. a raw prawn product and a cooked one, or a beef stock and a chicken one, and the right one is picked per ingredient.
 - Add `| alias1, alias2` after a product name to route extra keywords (e.g. misspellings) to it; add `| strict` to require the exact product and report `UNAVAILABLE` (in `add-to-woolworths-cart`) rather than substitute a different one.
 - Sources are merged in priority order (Clove first, then AnyList); the first source to resolve a given product wins when de-duplicating.

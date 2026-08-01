@@ -40,6 +40,22 @@ const STATE_GROUPS = [
       unpeeled: /\b(?:unpeeled|unshelled)\b/,
     },
   },
+  // Which animal (or none) a product is made from. Brand preferences must not
+  // override this: a favourite brand's beef stock is not a substitute for
+  // chicken stock. Real meats are listed before "vegetable" so that an
+  // ingredient naming both resolves to the meat.
+  {
+    group: "protein",
+    states: {
+      beef: /\b(?:beef|veal)\b/,
+      chicken: /\bchicken\b/,
+      lamb: /\blamb\b/,
+      pork: /\b(?:pork|ham|bacon|prosciutto)\b/,
+      turkey: /\bturkey\b/,
+      fish: /\b(?:fish|seafood)\b/,
+      vegetable: /\b(?:vegetable|vegetables|veggie)\b/,
+    },
+  },
 ];
 
 /**
@@ -93,6 +109,9 @@ export function conflictsWithProfile(profile, productName) {
   for (const { group, states: options } of STATE_GROUPS) {
     const wanted = profile.states.get(group);
     if (!wanted) continue;
+    // A product naming the wanted state as well as another one still satisfies
+    // the ingredient: "Beef & Lamb Meatballs" is a legitimate beef product.
+    if (options[wanted].test(t)) continue;
     for (const [state, re] of Object.entries(options)) {
       if (state !== wanted && re.test(t)) return true;
     }

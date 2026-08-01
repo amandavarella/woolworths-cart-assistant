@@ -232,6 +232,7 @@ output/                    # git-ignored hand-off files & reports
 ## Notes
 
 - Nothing is checked out — the app only fills your cart for you to review and order.
+- **Preparation state is never swapped.** If an ingredient (or its preferred product) says *raw*, a *cooked* product is never added in its place, and vice versa; the same holds for *peeled* vs *unpeeled*. A substitute may differ in brand or size, but not in preparation, and an item with no acceptable result is reported as unavailable instead. Softer details such as *deveined*, *tail off*, or *skinless* rank matching products higher without ruling the others out. See [`map-preferred-items`](./skills/map-preferred-items/SKILL.md#preparation-states).
 - **Third-party marketplace items are never added.** Woolworths search results that are fulfilled by an outside seller (shown with a "Sold by &lt;seller&gt;" label — Woolworths Everyday Market) are always skipped, both when filling the cart and when syncing preferred products, since they're consistently the wrong product. If every result for an item is a marketplace listing, that item is reported as unavailable instead.
 - Quantity estimation is best-effort and printed per item; tweak in your cart as needed.
 - The browser profile holds your login — it's git-ignored; never commit it.

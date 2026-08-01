@@ -98,11 +98,14 @@ export async function run(cfg = loadConfig()) {
         const skipped = r.marketplaceFiltered
           ? ` (skipped ${r.marketplaceFiltered} third-party "Sold by" listing${r.marketplaceFiltered === 1 ? "" : "s"})`
           : "";
-        const why = r.exactName
-          ? `strict preferred item not found, nothing substituted; wanted: ${r.exactName}${skipped}`
-          : r.marketplaceFiltered
-            ? `only third-party marketplace listings found${skipped}`
-            : `no suitable Woolworths product found`;
+        const wanted = (r.wantedStates || []).join(" + ");
+        const why = r.stateFiltered
+          ? `no ${wanted} product found — ${r.stateFiltered} result(s) were the wrong preparation, nothing substituted${skipped}`
+          : r.strict && r.exactName
+            ? `strict preferred item not found, nothing substituted; wanted: ${r.exactName}${skipped}`
+            : r.marketplaceFiltered
+              ? `only third-party marketplace listings found${skipped}`
+              : `no suitable Woolworths product found`;
         console.log(`  • ${r.name} → ${why}`);
       }
     }

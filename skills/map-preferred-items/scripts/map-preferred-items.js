@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
-import { loadPreferred, matchPreferred, isStrongMatch, loadIgnore, isIgnored } from "../../../src/preferences.js";
+import { loadPreferred, matchPreferred, isStrongMatch, loadIgnore, ignoreReason } from "../../../src/preferences.js";
 
 /**
  * Skill: map-preferred-items
@@ -34,8 +34,12 @@ export async function run(cfg = loadConfig()) {
   console.log(`Loaded ${preferred.length} preferred items from ${cfg.preferredFile}`);
 
   const ignore = loadIgnore(cfg.ignoreFile);
-  if (ignore.length) {
-    console.log(`Loaded ${ignore.length} ignore item(s) from ${cfg.ignoreFile}`);
+  const ignoreRules = ignore.names.length + ignore.categories.length;
+  if (ignoreRules) {
+    console.log(
+      `Loaded ${ignoreRules} ignore rule(s) from ${cfg.ignoreFile} ` +
+        `(${ignore.names.length} item(s), ${ignore.categories.length} category(ies))`
+    );
   }
 
   const plan = [];
@@ -47,9 +51,20 @@ export async function run(cfg = loadConfig()) {
     console.log(`\nMapping ${items.length} item(s) from ${source}...`);
 
     for (const it of items) {
-      if (isIgnored(it.name, ignore)) {
-        console.log(`  • "${it.name}" → on ignore list, skipping`);
-        ignored.push({ source, name: it.name, ingredient: it.full });
+      const reason = ignoreReason(it, ignore);
+      if (reason) {
+        const why =
+          reason.kind === "category"
+            ? `in ignored category "${reason.category}"`
+            : `on ignore list ("${reason.entry}")`;
+        console.log(`  • "${it.name}" → ${why}, skipping`);
+        ignored.push({
+          source,
+          name: it.name,
+          ingredient: it.full,
+          reason: reason.kind,
+          rule: reason.entry,
+        });
         continue;
       }
       const match = matchPreferred(it.name, preferred);

@@ -152,6 +152,16 @@ drops `cassava flour`) is dropped during mapping: it is never matched to a
 product and never added to your cart. Ignored items are recorded under
 `ignored` in `output/shopping-plan.json`.
 
+A line written as `category: <name>` ignores a whole **AnyList category** rather
+than a single item, so anything you file (now or later) under a non-grocery
+aisle is skipped automatically:
+
+```
+category: officeworks
+category: pharmacy
+category: chemist
+```
+
 To seed or refresh the preferred list from everything you've bought before, run the
 [`sync-preferred-from-pastshops`](./skills/sync-preferred-from-pastshops/SKILL.md)
 skill — it reads your Woolworths past-shops list (all pages) and appends any

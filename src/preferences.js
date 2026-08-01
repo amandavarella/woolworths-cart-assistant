@@ -109,38 +109,67 @@ function tokenize(text) {
 }
 
 /**
- * Load the ignore list — one item per line, `#` comments allowed. Returns an
- * array of `{ raw, tokens }` where `tokens` are the singularised content words
- * used for matching.
+ * Load the ignore list — one entry per line, `#` comments allowed. Two kinds of
+ * entry are supported:
+ *   - a plain item name, matched against the ingredient, and
+ *   - `category: <name>`, matched against the source category an item is filed
+ *     under (AnyList categories such as "Officeworks"), so a whole non-grocery
+ *     aisle is skipped including items added to it later.
+ *
+ * Returns `{ names, categories }`, each an array of `{ raw, tokens }` where
+ * `tokens` are the singularised content words used for matching.
  */
 export function loadIgnore(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) return [];
+  const names = [];
+  const categories = [];
+  if (!filePath || !fs.existsSync(filePath)) return { names, categories };
   const raw = fs.readFileSync(filePath, "utf8");
   const seen = new Set();
-  const items = [];
   for (const line of raw.split(/\r?\n/)) {
     const t = line.trim();
     if (!t || t.startsWith("#")) continue;
     const key = t.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    const tokens = tokenize(t).map(singularize);
-    if (tokens.length) items.push({ raw: t, tokens });
+    const categoryMatch = /^category\s*:\s*(.+)$/i.exec(t);
+    const value = categoryMatch ? categoryMatch[1].trim() : t;
+    const tokens = tokenize(value).map(singularize);
+    if (!tokens.length) continue;
+    (categoryMatch ? categories : names).push({ raw: value, tokens });
   }
-  return items;
+  return { names, categories };
+}
+
+/** The first entry whose every word appears in `text`, or null. */
+function matchIgnoreEntry(text, entries) {
+  if (!entries || !entries.length) return null;
+  const toks = new Set(tokenize(text).map(singularize));
+  if (!toks.size) return null;
+  return entries.find((entry) => entry.tokens.every((w) => toks.has(w))) || null;
 }
 
 /**
- * Whether an ingredient name should be ignored. Matches when every word of an
- * ignore entry is present (singularised, whole-word) in the ingredient, so
- * "Cassava" also drops "cassava flour" but won't match unrelated items that
- * merely share a substring.
+ * Why an item should be ignored, or null when it shouldn't. Accepts either a
+ * bare ingredient name or an item object (`{ name, category }`).
+ *
+ * Both names and categories match when every word of the ignore entry is
+ * present (singularised, whole-word), so "Cassava" also drops "cassava flour"
+ * and a `category: chemist` entry also drops a "chemist-pharmacy" category,
+ * without matching unrelated items that merely share a substring.
+ *
+ * Returns `{ kind: "category"|"name", entry, category? }`.
  */
-export function isIgnored(ingredientName, ignoreList) {
-  if (!ignoreList || !ignoreList.length) return false;
-  const toks = new Set(tokenize(ingredientName).map(singularize));
-  if (!toks.size) return false;
-  return ignoreList.some((item) => item.tokens.every((w) => toks.has(w)));
+export function ignoreReason(item, ignore) {
+  const { name, category } = typeof item === "string" ? { name: item } : item || {};
+  if (!ignore) return null;
+
+  const byCategory = matchIgnoreEntry(category, ignore.categories);
+  if (byCategory) return { kind: "category", entry: byCategory.raw, category };
+
+  const byName = matchIgnoreEntry(name, ignore.names);
+  if (byName) return { kind: "name", entry: byName.raw };
+
+  return null;
 }
 
 function singularize(w) {

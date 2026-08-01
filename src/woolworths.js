@@ -1,4 +1,9 @@
-import { keywords } from "./preferences.js";
+import {
+  keywords,
+  preparationProfile,
+  conflictsWithProfile,
+  profileAffinity,
+} from "./preferences.js";
 
 // Product-name fragments that indicate a non-consumable hard good — used to
 // keep the cart to actual consumables: produce, food & drink, house-cleaning
@@ -97,7 +102,7 @@ async function waitForResults(page, timeoutMs = 11000) {
   return 0;
 }
 
-function chooseProduct(products, kws, exactName, strict) {
+function chooseProduct(products, kws, exactName, strict, prep) {
   const ex = (exactName || "").toLowerCase();
   let bestPassing = null; // food-safe, score >= 0
   let bestAny = null; // highest keyword overlap regardless (best-effort fallback)
@@ -107,7 +112,14 @@ function chooseProduct(products, kws, exactName, strict) {
   // not Woolworths-fulfilled and are consistently the wrong product. If every
   // result is a marketplace listing, we return null (reported as UNAVAILABLE)
   // rather than substitute one in.
-  const candidates = products.filter((p) => !p.marketplace).map((p) => p.name);
+  const listed = products.filter((p) => !p.marketplace).map((p) => p.name);
+  if (!listed.length) return null;
+
+  // A substitute may differ in brand or size but never in preparation state,
+  // so results in a state the ingredient rules out are dropped before scoring.
+  // When that leaves nothing, the item is reported as UNAVAILABLE rather than
+  // filled with, say, cooked prawns in place of raw ones.
+  const candidates = listed.filter((name) => !conflictsWithProfile(prep, name));
   if (!candidates.length) return null;
 
   for (const name of candidates) {
@@ -116,7 +128,7 @@ function chooseProduct(products, kws, exactName, strict) {
     for (const kw of kws) if (pl.includes(kw)) hits++;
     const isNonFood = NONFOOD_WORDS.some((w) => pl.includes(w));
     const isExact = !!ex && pl.includes(ex);
-    let score = hits * 2;
+    let score = hits * 2 + profileAffinity(prep, name) * 3;
     if (isExact) score += 5;
 
     if (!bestAny || hits > bestAny.hits) bestAny = { name, hits, score };
@@ -145,9 +157,10 @@ function chooseProduct(products, kws, exactName, strict) {
  * (adds a single unit). Quantity is raised separately via setQuantity().
  *
  * Normally never silently skips: if results exist it adds the best available
- * match. The exception is `strict` preferred items — for those, only the
- * exact preferred product name is acceptable; if it's not among the results,
- * this returns `UNAVAILABLE` instead of substituting a different product.
+ * match. There are two exceptions, both reported as `UNAVAILABLE` rather than
+ * filled with something else: `strict` preferred items, for which only the
+ * exact preferred product name is acceptable, and items whose preparation
+ * state (raw, cooked, …) no result matches.
  */
 export async function addToCart(page, { base, term, ingredientName, exactName, strict }) {
   await page.goto(SEARCH(base, term), { waitUntil: "domcontentloaded" });
@@ -157,9 +170,25 @@ export async function addToCart(page, { base, term, ingredientName, exactName, s
   const products = await page.evaluate(`(() => { ${COLLECT_FN}; return __collectAddButtons(); })()`);
   const kws = keywords(exactName || ingredientName || term);
   const marketplaceCount = products.filter((p) => p.marketplace).length;
-  const choice = chooseProduct(products, kws, exactName, strict);
+  // The ingredient's own wording decides the preparation state; the preferred
+  // product only fills in states the ingredient didn't mention.
+  const prep = preparationProfile(ingredientName, exactName);
+  const choice = chooseProduct(products, kws, exactName, strict, prep);
 
-  if (!choice) return { status: "UNAVAILABLE", term, exactName, marketplaceFiltered: marketplaceCount };
+  if (!choice) {
+    const stateFiltered = products.filter(
+      (p) => !p.marketplace && conflictsWithProfile(prep, p.name)
+    ).length;
+    return {
+      status: "UNAVAILABLE",
+      term,
+      exactName,
+      strict: !!strict,
+      marketplaceFiltered: marketplaceCount,
+      stateFiltered,
+      wantedStates: [...prep.states.values()],
+    };
+  }
 
   // Click the chosen product's Add button (match by exact product name).
   const clicked = await page.evaluate((target) => {

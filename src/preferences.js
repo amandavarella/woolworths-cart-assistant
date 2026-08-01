@@ -19,6 +19,101 @@ const DESCRIPTOR_WORDS = new Set([
 ]);
 
 /**
+ * Preparation states that are mutually exclusive: a product in one state is
+ * never an acceptable stand-in for an ingredient asking for another, however
+ * well the rest of the name matches (raw prawns cannot be filled with cooked
+ * ones). Word boundaries keep the negated forms apart, so /\bcooked\b/ does
+ * not match "uncooked" and /\bpeeled\b/ does not match "unpeeled".
+ */
+const STATE_GROUPS = [
+  {
+    group: "doneness",
+    states: {
+      raw: /\b(?:raw|uncooked)\b/,
+      cooked: /\b(?:cooked|precooked|pre-cooked)\b/,
+    },
+  },
+  {
+    group: "shell",
+    states: {
+      peeled: /\b(?:peeled|shelled)\b/,
+      unpeeled: /\b(?:unpeeled|unshelled)\b/,
+    },
+  },
+];
+
+/**
+ * Preparation details that aren't mutually exclusive but should steer the
+ * choice when they're asked for: a product that also says "deveined" beats one
+ * that is silent about it, without the silent one being disqualified.
+ */
+const ATTRIBUTE_PATTERNS = [
+  /\bdeveined\b/,
+  /\bbutterflied\b/,
+  /\bmarinated\b/,
+  /\bsmoked\b/,
+  /\btail off\b/,
+  /\btail on\b/,
+  /\bskin(?:less| off)\b/,
+  /\bbone(?:less| out)\b/,
+];
+
+const normaliseText = (text) => (text || "").toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * The preparation states and attributes asked for, read from `texts` in
+ * priority order: the first text to name a state claims that group, so an
+ * ingredient's own wording ("raw prawns") outranks the preferred product's.
+ * Attributes are collected from every text.
+ */
+export function preparationProfile(...texts) {
+  const states = new Map();
+  const attributes = new Set();
+  for (const text of texts) {
+    const t = normaliseText(text);
+    if (!t) continue;
+    for (const { group, states: options } of STATE_GROUPS) {
+      if (states.has(group)) continue;
+      for (const [state, re] of Object.entries(options)) {
+        if (re.test(t)) {
+          states.set(group, state);
+          break;
+        }
+      }
+    }
+    for (const re of ATTRIBUTE_PATTERNS) if (re.test(t)) attributes.add(re);
+  }
+  return { states, attributes };
+}
+
+/** Whether `productName` is in a preparation state the profile rules out. */
+export function conflictsWithProfile(profile, productName) {
+  if (!profile || !profile.states.size) return false;
+  const t = normaliseText(productName);
+  for (const { group, states: options } of STATE_GROUPS) {
+    const wanted = profile.states.get(group);
+    if (!wanted) continue;
+    for (const [state, re] of Object.entries(options)) {
+      if (state !== wanted && re.test(t)) return true;
+    }
+  }
+  return false;
+}
+
+/** How many of the profile's wanted states and attributes `productName` names. */
+export function profileAffinity(profile, productName) {
+  if (!profile) return 0;
+  const t = normaliseText(productName);
+  let n = 0;
+  for (const { group, states: options } of STATE_GROUPS) {
+    const wanted = profile.states.get(group);
+    if (wanted && options[wanted].test(t)) n++;
+  }
+  for (const re of profile.attributes) if (re.test(t)) n++;
+  return n;
+}
+
+/**
  * Parse one non-comment preferred-items line into a structured entry.
  *
  * Plain lines are just the Woolworths product name, e.g.:
@@ -237,6 +332,9 @@ function colorAdjacentTo(tokens, head, color) {
  *     its last word (e.g. "lemon wedges" must NOT match a "lime wedges"
  *     alias just because both end in "wedges").
  *
+ * A candidate naming a conflicting PREPARATION STATE is rejected outright,
+ * whatever it scores: "raw prawns" never resolves to a cooked product.
+ *
  * Among gated candidates, the one overlapping the most content words wins.
  *
  * Returns { product, score, hits, head, strict } or null.
@@ -247,6 +345,7 @@ export function matchPreferred(ingredientName, preferredList) {
   const head = content[content.length - 1];
   const ingredientTokens = new Set(wordTokens(ingredientName));
   const ingredientColor = colorOf(ingredientTokens);
+  const prep = preparationProfile(ingredientName);
 
   let best = null;
   const ingredientLower = ingredientName.toLowerCase();
@@ -262,6 +361,8 @@ export function matchPreferred(ingredientName, preferredList) {
     // ingredient with no colour still falls through to the default preferred
     // product as before.
     if (ingredientColor && !colorAdjacentTo(nameTokList, head, ingredientColor)) continue;
+
+    if (conflictsWithProfile(prep, item.name)) continue;
 
     let gated = nameToks.has(head);
     // Aliases can gate an otherwise-unmatched product AND, when they fully
@@ -282,7 +383,7 @@ export function matchPreferred(ingredientName, preferredList) {
     const toks = productTokenSet(item);
     let hits = 0;
     for (const w of content) if (toks.has(w)) hits++;
-    let score = hits * 2 + aliasBonus;
+    let score = hits * 2 + aliasBonus + profileAffinity(prep, item.name) * 3;
     if (item.name.toLowerCase().includes(ingredientLower)) score += 5;
 
     if (!best || score > best.score || (score === best.score && item.name.length < best.product.length)) {

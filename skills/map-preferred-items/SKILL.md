@@ -17,10 +17,32 @@ Read every available item-source hand-off file (`clove-items.json` and/or `anyli
 4. For each remaining ingredient, runs head-noun keyword matching against the preferred list: a candidate matches if the ingredient's head noun is in the product name itself, OR if one of the product's aliases is *fully* contained in the ingredient (every alias word present) — this lets a multi-word alias like "lime wedges" route that specific phrase without also catching unrelated ingredients that merely share its last word (e.g. "lemon wedges" is unaffected by a "lime wedges" alias):
    - **`preferred`** mode — a confident match was found; the exact preferred product name becomes the search term. If the line was marked `strict`, the plan entry carries `strict: true`.
    - **`fallback`** mode — no match; the raw ingredient name is used for a generic Woolworths search later (food plus everyday consumables like personal care and cleaning; only non-grocery hard goods are filtered out).
+   Candidates in a conflicting **preparation state** are rejected before scoring, so an ingredient asking for *raw* prawns is never mapped to a *cooked* product (see below).
 5. Merges both sources and **de-duplicates** by resolved search target, so the same product appearing on both lists is only added once. Each plan entry records which `source` it came from.
 6. Writes the plan.
 
 This step is **deterministic and offline** — safe to re-run and inspect without touching any website.
+
+## Preparation states
+
+Some words describe how a product is prepared, and swapping them silently
+produces the wrong thing. These are handled in two ways:
+
+- **Mutually exclusive states** are a hard gate. A preferred product naming a
+  different state than the ingredient is skipped no matter how well the rest of
+  the name matches, so "Tassal Raw Aussie Tiger Prawns" can never resolve to
+  "Woolworths Thawed **Cooked** Jumbo Tiger Prawns". The groups are
+  *raw / uncooked* vs *cooked / precooked*, and *peeled / shelled* vs
+  *unpeeled / unshelled*. Matching is whole-word, so "uncooked" counts as raw
+  rather than as cooked, and "unpeeled" doesn't satisfy "peeled".
+- **Preparation attributes** (`deveined`, `butterflied`, `marinated`, `smoked`,
+  `tail off` / `tail on`, `skinless`, `boneless`) are a strong preference, not a
+  requirement: a product that also names them scores higher, but one that is
+  simply silent about them stays eligible.
+
+An ingredient that names no state is unaffected, and where the ingredient is
+silent but the preferred product isn't, the preferred product's own state is
+what later substitutions must respect.
 
 ## Usage
 
@@ -87,5 +109,6 @@ Reads from `.env`: `PREFERRED_ITEMS_FILE`, `IGNORE_ITEMS_FILE`, `OUTPUT_DIR`.
 - Edit `preferred-items.txt` to control exactly which Woolworths product is bought for a given ingredient.
 - Edit `ignore-items.txt` to drop items you never want bought (e.g. things you grow or get elsewhere). One entry per line; matching is case-insensitive and word-based. Use `category: <name>` to drop an entire AnyList category (e.g. Officeworks, Pharmacy, Chemist) rather than listing each item.
 - Matching requires the ingredient's head noun (its last meaningful word) to appear in the preferred product or one of its aliases, which avoids spurious matches on generic descriptors like "baby" or "fresh".
+- Preparation states (raw vs cooked, peeled vs unpeeled) are never swapped; keep a separate preferred line for each state you buy, e.g. a raw prawn product and a cooked one, and the right one is picked per ingredient.
 - Add `| alias1, alias2` after a product name to route extra keywords (e.g. misspellings) to it; add `| strict` to require the exact product and report `UNAVAILABLE` (in `add-to-woolworths-cart`) rather than substitute a different one.
 - Sources are merged in priority order (Clove first, then AnyList); the first source to resolve a given product wins when de-duplicating.

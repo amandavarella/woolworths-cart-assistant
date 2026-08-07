@@ -43,7 +43,7 @@ Running them individually is useful when you want to inspect `output/shopping-pl
 
 ## First run / login
 
-The two browser steps (`get-clove-items`, `add-to-woolworths-cart`) each ensure you are logged in, prompting in a visible window if needed. So the **first** run must be non-headless (`HEADLESS=false`). The login session is saved to `PROFILE_DIR` and reused, so later runs can be headless. Log into Clove and Woolworths once each.
+The two browser steps (`get-clove-items`, `add-to-woolworths-cart`) each ensure you are logged in, opening a visible window and polling until you finish logging in if needed (no terminal Enter). So the **first** run must be non-headless (`HEADLESS=false`). The login session is saved to `PROFILE_DIR` and reused, so later runs can be headless. Log into Clove and Woolworths once each.
 
 `get-anylist-items` is **not** a browser step — it reads the AnyList API using `ANYLIST_EMAIL` / `ANYLIST_PASSWORD` from `.env`. Fill those in to enable the AnyList source (or leave them blank to skip it).
 

@@ -10,7 +10,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 ## What it does
 
 1. Reads `output/shopping-plan.json` (produced by `map-preferred-items`).
-2. Launches a persistent browser and ensures you are logged into Woolworths (prompts in a visible window if needed; session is reused afterwards).
+2. Launches a persistent browser and ensures you are logged into Woolworths (opens a visible window and polls until you log in if needed; session is reused afterwards). No terminal Enter press is required.
 3. For each plan entry:
    - Searches Woolworths for `term`.
    - Chooses the best match. `preferred` entries bias toward the exact product name; only non-consumable hard goods (kitchen tools/gadgets and hard kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — produce, food and drink, and everyday consumables (personal care, toiletries, cleaning) are all eligible.

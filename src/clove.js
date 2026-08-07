@@ -16,9 +16,17 @@
  */
 
 /**
+ * Clove section headers that sometimes appear as lines in a pasted list.
+ * Shared with the legacy web scraper so paste mode drops them the same way.
+ */
+export const CLOVE_HEADER_RE =
+  /^(cans? and jars?|cheese|fruit( and)? vegetables?|herbs?( and)? spices?|meat|pasta,?\s*rice( and)? beans?|condiments?( and)? sauces?|dairy|bakery|frozen|pantry|others?)$/i;
+
+/**
  * Units that can appear in a pasted amount prefix. Kept in sync with the
  * quantity estimator so "2 cloves garlic" or "1 x 14 ounce can coconut milk"
- * strip down to just the ingredient name.
+ * strip down to just the ingredient name. Includes common Portuguese unit
+ * words so a mixed-language paste still strips amounts correctly.
  */
 const PASTE_UNIT_WORDS = new Set([
   "tbsp", "tablespoon", "tablespoons", "tsp", "teaspoon", "teaspoons",
@@ -27,10 +35,16 @@ const PASTE_UNIT_WORDS = new Set([
   "ml", "millilitre", "millilitres", "l", "litre", "litres",
   "g", "gs", "gram", "grams", "kg", "lb", "lbs", "pound", "pounds",
   "oz", "ounce", "ounces",
+  // Portuguese amounts/units
+  "grama", "gramas", "quilo", "quilos", "colher", "colheres", "xícara", "xicara",
+  "xícaras", "xicaras", "copo", "copos",
   "can", "cans", "tin", "tins", "jar", "jars", "pkt", "packet", "packets",
   "bottle", "bottles", "box", "boxes", "tub", "tubs", "bag", "bags",
   "bunch", "bunches", "punnet", "punnets", "pack", "packs",
 ]);
+
+/** Container words that mean the ingredient is tinned/canned, not fresh. */
+const TIN_OR_CAN_UNITS = new Set(["can", "cans", "tin", "tins"]);
 
 const NUMBER_TOKEN_RE = /^(?:\d+(?:[.,]\d+)?|\d*[½⅓⅔¼¾⅕⅛]|\d+[⁄/]\d+)$/;
 
@@ -41,11 +55,16 @@ const NUMBER_TOKEN_RE = /^(?:\d+(?:[.,]\d+)?|\d*[½⅓⅔¼¾⅕⅛]|\d+[⁄/]\d
  * "roma tomatoes", "1 × 14 ounce can coconut milk" → "coconut milk".
  * Unit words are only stripped once a number has been seen, so a line like
  * "cloves" (no amount) is left untouched.
+ *
+ * When the amount uses a tin/can container ("2 tins tomatoes"), the container
+ * is kept as the Australian adjective "tinned" on the name ("tinned tomatoes")
+ * so preferred matching can distinguish canned from fresh.
  */
 export function ingredientNameFromLine(line) {
   const tokens = (line || "").trim().split(/\s+/).filter(Boolean);
   let i = 0;
   let sawNumber = false;
+  let sawTinOrCan = false;
   while (i < tokens.length) {
     const tk = tokens[i];
     const lower = tk.toLowerCase();
@@ -58,21 +77,32 @@ export function ingredientNameFromLine(line) {
       i++;
       continue;
     }
-    if (sawNumber && PASTE_UNIT_WORDS.has(lower.replace(/[.,]$/, ""))) {
+    // Parenthetical unit notes from Portuguese pastes, e.g. "(sopa)" / "(sopa)s".
+    if (sawNumber && /^\([^)]*\)s?$/i.test(tk)) {
+      i++;
+      continue;
+    }
+    const unit = lower.replace(/[.,]$/, "");
+    if (sawNumber && PASTE_UNIT_WORDS.has(unit)) {
+      if (TIN_OR_CAN_UNITS.has(unit)) sawTinOrCan = true;
       i++;
       continue;
     }
     break;
   }
-  const name = tokens.slice(i).join(" ").trim();
-  return name || (line || "").trim();
+  let name = tokens.slice(i).join(" ").trim();
+  if (!name) name = (line || "").trim();
+  if (sawTinOrCan && name && !/^tinned\b/i.test(name) && !/^canned\b/i.test(name)) {
+    name = `tinned ${name}`;
+  }
+  return name;
 }
 
 /**
  * Parse a pasted Clove list (plain text, one ingredient per line) into the same
  * `{ full, name }` shape the browser scraper returns, so everything downstream
- * is identical. Blank lines and lines starting with `#` are ignored, and
- * duplicates (by full line) are de-duped.
+ * is identical. Blank lines, `#` comments, and Clove section headers are
+ * ignored, and duplicates (by full line) are de-duped.
  */
 export function parsePastedIngredients(text) {
   const out = [];
@@ -80,6 +110,7 @@ export function parsePastedIngredients(text) {
   for (const raw of String(text || "").split(/\r?\n/)) {
     const full = raw.replace(/\s+/g, " ").replace(/^[•\-\u2022\s]+/, "").trim();
     if (!full || full.startsWith("#")) continue;
+    if (CLOVE_HEADER_RE.test(full)) continue;
     const key = full.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -119,6 +150,7 @@ export async function extractIngredients(page, cloveUrl) {
   const items = await page.evaluate(() => {
     const normalise = (s) =>
       (s || "").replace(/\s+/g, " ").replace(/^[•\-\u2022\s]+/, "").trim();
+    // Keep in sync with CLOVE_HEADER_RE in this module (paste mode).
     const HEADER_RE = /^(cans? and jars?|cheese|fruit( and)? vegetables?|herbs?( and)? spices?|meat|pasta,?\s*rice( and)? beans?|condiments?( and)? sauces?|dairy|bakery|frozen|pantry|others?)$/i;
 
     const out = [];

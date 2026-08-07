@@ -14,7 +14,7 @@ It uses the [`anylist`](https://github.com/kevdliu/anylist) package, an unoffici
 1. Logs into AnyList with `ANYLIST_EMAIL` / `ANYLIST_PASSWORD`. The encrypted token cache (`.anylist_credentials`, git-ignored) means only the first run does a full login.
 2. Fetches your lists and selects the one named by `ANYLIST_LIST_NAME` (default **Groceries**).
 3. Reads each **unchecked** item as `{ full, name, category }` — `name` is the bare item name (used for matching), `full` includes the quantity when AnyList has one, and `category` is the AnyList category the item is filed under (e.g. `produce`, `officeworks`), which `map-preferred-items` can ignore wholesale via a `category:` line in `ignore-items.txt`. Crossed-off (checked) items are skipped.
-4. **Item names are auto-translated/localized to Australian English** — same behaviour as `get-clove-items` (see that skill's SKILL.md for details): non-English names are translated to English via a single batched, free translation request (fails safe on error, disable with `AUTO_TRANSLATE=false`), then every name (translated or already English) is run through a curated Australian-English glossary (e.g. "bell pepper" → "capsicum"), which always runs regardless of `AUTO_TRANSLATE`.
+4. **Item names are auto-translated/localized to Australian English** — same behaviour as `get-clove-items` (see that skill's SKILL.md for details): Portuguese or American-English names are localized whenever found (curated glossary first, then optional machine translation; disable the machine half with `AUTO_TRANSLATE=false`), then every name is run through the glossary again so US/generic terms become Australian Woolworths wording (e.g. "bell pepper" → "capsicum").
 5. Writes the results to the hand-off file.
 
 ## Usage

@@ -4,14 +4,13 @@ import translate from "google-translate-api-x";
  * Automatic translation/localization of ingredient names to Australian
  * English, in two steps:
  *
- *   1. Portuguese (or any other non-English language) → English, via Google
- *      Translate's free, unofficial batch endpoint (`google-translate-api-x`,
- *      no API key), with auto language detection.
- *   2. English → Australian English, via a small curated glossary of
- *      American/generic grocery terms (e.g. "cilantro", "bell pepper") that
- *      Google Translate tends to produce, or that a pasted list in US
- *      English would already use — mapped to the Australian term Woolworths
- *      actually lists products under (e.g. "coriander", "capsicum").
+ *   1. Curated glossary (Portuguese / US English / known mistranslations →
+ *      Australian English), applied first with no network — e.g.
+ *      "cheiro-verde" → "parsley", "butternut squash" → "butternut pumpkin",
+ *      "cilantro" → "coriander".
+ *   2. Any remaining non-English text → English via Google Translate's free,
+ *      unofficial batch endpoint (`google-translate-api-x`, no API key), with
+ *      auto language detection; the glossary then runs again on the result.
  *
  * Both steps run before an ingredient ever reaches preferred-item matching
  * or Woolworths search, since a foreign or non-Australian term would
@@ -28,13 +27,24 @@ const TRAILING_CONTAINER_WORDS = new Set([
   "bottle", "bottles", "box", "boxes", "tub", "tubs", "sachet", "sachets",
 ]);
 
-// American (or otherwise non-Australian) grocery/cooking terms mapped to the
-// Australian term, so the resulting text matches how Woolworths actually
-// names its products. Matched whole-phrase, case-insensitively; longer
-// phrases are checked before their shorter sub-words (e.g. "green onion"
-// before a lone "onion") — see the sort below, so entries can be added in
-// any order.
+// Portuguese, American, and known bad machine-translation grocery terms
+// mapped to the Australian English Woolworths actually lists products under.
+// Matched whole-phrase, case-insensitively; longer phrases are checked before
+// their shorter sub-words (e.g. "green onion" before a lone "onion") — see
+// the sort below, so entries can be added in any order. Portuguese entries
+// also cover common machine-translation misfires (e.g. "cheiro-verde" →
+// "green scent") so a curated hit wins over a flaky Google Translate result.
 const US_TO_AU_TERMS = [
+  // Portuguese → Australian English (and common mistranslations of same)
+  ["abóbora de pescoço", "butternut pumpkin"],
+  ["abobora de pescoco", "butternut pumpkin"],
+  ["cheiro-verde", "parsley"],
+  ["cheiro verde", "parsley"],
+  ["green scent", "parsley"],
+  ["neck pumpkin", "butternut pumpkin"],
+  // US English → Australian English
+  ["butternut squash", "butternut pumpkin"],
+  ["butternut squashes", "butternut pumpkins"],
   ["cilantro", "coriander"],
   ["arugula", "rocket"],
   ["scallions", "spring onions"],
@@ -89,15 +99,19 @@ function escapeRegExp(s) {
 }
 
 /**
- * Apply the US/generic → Australian English glossary to `text`, preserving
- * the case of each match (so "Cilantro" → "Coriander", "cilantro" →
- * "coriander"). Safe to call on already-Australian or non-English text — it
- * only ever touches whole-word/phrase matches from the glossary above.
+ * Apply the curated PT/US/generic → Australian English glossary to `text`,
+ * preserving the case of each match (so "Cilantro" → "Coriander", "cilantro"
+ * → "coriander"). Safe to call on already-Australian text — it only ever
+ * touches whole-word/phrase matches from the glossary above.
+ *
+ * Hyphenated Portuguese terms (e.g. "cheiro-verde") are matched with word
+ * boundaries that treat `-` as a word character, so the full phrase hits.
  */
 export function toAustralianEnglish(text) {
   let result = text || "";
   for (const [from, to] of US_TO_AU_TERMS) {
-    const re = new RegExp(`\\b${escapeRegExp(from)}\\b`, "gi");
+    // Allow hyphens inside the phrase so "cheiro-verde" matches as one term.
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(from)}(?![\\p{L}\\p{N}])`, "giu");
     result = result.replace(re, (match) =>
       match[0] === match[0].toUpperCase() ? to[0].toUpperCase() + to.slice(1) : to
     );
@@ -154,21 +168,40 @@ function buildLocalizedItem(it, finalText, reason, log) {
 export async function translateNonEnglishItems(items, { to = "en", log = () => {} } = {}) {
   if (!items || !items.length) return items || [];
 
+  // Curated glossary first: known Portuguese / US / mistranslation phrases
+  // become Australian English without needing the network. Anything the
+  // glossary already rewrote skips the machine-translation pass below.
+  const needsMachine = [];
+  const early = items.map((it) => {
+    const glossed = toAustralianEnglish(it.name);
+    if (glossed.toLowerCase() !== (it.name || "").toLowerCase()) {
+      return buildLocalizedItem(it, glossed, "glossary (PT/US → AU English)", log);
+    }
+    needsMachine.push(it);
+    return null;
+  });
+
   let results;
   try {
-    results = await translate(
-      items.map((it) => it.name),
-      { from: "auto", to }
-    );
+    results = needsMachine.length
+      ? await translate(
+          needsMachine.map((it) => it.name),
+          { from: "auto", to }
+        )
+      : [];
   } catch (err) {
     log(`  (translation check skipped: ${err.message})`);
-    return items.map((it) =>
-      buildLocalizedItem(it, toAustralianEnglish(it.name), "US/generic English → AU English", log)
-    );
+    return items.map((it, i) => {
+      if (early[i]) return early[i];
+      return buildLocalizedItem(it, toAustralianEnglish(it.name), "US/generic English → AU English", log);
+    });
   }
 
+  let machineIdx = 0;
   return items.map((it, i) => {
-    const res = Array.isArray(results) ? results[i] : results;
+    if (early[i]) return early[i];
+
+    const res = Array.isArray(results) ? results[machineIdx++] : results;
     const sourceLang = res && res.from && res.from.language ? res.from.language.iso : null;
 
     let baseText = it.name;
@@ -181,6 +214,8 @@ export async function translateNonEnglishItems(items, { to = "en", log = () => {
       }
     }
 
+    // Glossary again on the machine result, so US terms and known bad
+    // translations (e.g. "green scent", "neck pumpkin") still get corrected.
     return buildLocalizedItem(it, toAustralianEnglish(baseText), reason, log);
   });
 }

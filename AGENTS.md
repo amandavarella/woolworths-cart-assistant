@@ -55,7 +55,7 @@ Keep `src/` as the single source of shared logic. Skill scripts should stay thin
 
 ## Login
 
-The browser skills detect whether you are logged in and, if not, open a visible window and wait for you to log in, then continue. Because the session is saved in `PROFILE_DIR`, you only log in once.
+The browser skills detect whether you are logged in and, if not, open a visible window and poll until you log in there (no terminal Enter needed), then continue. Because the session is saved in `PROFILE_DIR`, you only log in once.
 
 - The **first** run must be non-headless (`HEADLESS=false`).
 - After logging in once, set `HEADLESS=true` for unattended runs.

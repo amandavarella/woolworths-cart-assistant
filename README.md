@@ -75,8 +75,10 @@ for details. The same applies to AnyList item names.
 ## First run — log in once
 
 The Woolworths skills check whether you're logged in; if not, they open a
-visible window, wait for you to log in, then continue. Your session is saved in
-a dedicated profile (`PROFILE_DIR`), so future runs are automatic.
+visible window and **poll until you finish logging in** (no need to press
+Enter in the terminal — important when an agent runs the pipeline). Your
+session is saved in a dedicated profile (`PROFILE_DIR`), so future runs are
+automatic.
 
 Run the whole pipeline once with a visible browser (`HEADLESS=false`, the
 default) to log into Woolworths:

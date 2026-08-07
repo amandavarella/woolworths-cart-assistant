@@ -1,6 +1,5 @@
 import { chromium } from "playwright";
 import path from "node:path";
-import readline from "node:readline";
 
 /**
  * Launch a persistent browser context. The profile lives in PROFILE_DIR so the
@@ -17,15 +16,14 @@ export async function launchBrowser({ profileDir, headless, channel }) {
   return context;
 }
 
-function prompt(question) {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => rl.question(question, (a) => { rl.close(); resolve(a); }));
-}
+const LOGIN_POLL_MS = 3000;
+const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
  * Ensure the given page is logged into a site. Detection is heuristic; if it
- * can't confirm a logged-in state, it pauses and asks the user to log in
- * manually in the visible window, then re-checks.
+ * can't confirm a logged-in state, it opens a visible window and polls until
+ * you finish logging in there (no terminal Enter needed — so agent-driven
+ * runs can continue once the browser session is valid).
  */
 export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -44,19 +42,25 @@ export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) 
 
   console.log(`\n⚠ ${name}: you don't appear to be logged in.`);
   console.log(`  A browser window is open. Please log into ${name} there.`);
-  await prompt(`  Press Enter once you've logged into ${name}... `);
+  console.log(`  Waiting up to ${LOGIN_TIMEOUT_MS / 60000} minutes (checking every ${LOGIN_POLL_MS / 1000}s)...`);
 
-  await page.goto(url, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
-  if (await isLoggedIn(page)) {
-    console.log(`✓ ${name}: logged in`);
-    return true;
+  const deadline = Date.now() + LOGIN_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(LOGIN_POLL_MS);
+    if (await isLoggedIn(page)) {
+      console.log(`✓ ${name}: logged in`);
+      return true;
+    }
   }
-  // Give it one more chance — sites sometimes need a beat after login redirects.
-  await prompt(`  Still can't confirm login. Finish logging in, then press Enter again... `);
+
+  // One last reload in case cookies landed but the open tab still looks logged out.
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2500);
   const ok = await isLoggedIn(page);
-  console.log(ok ? `✓ ${name}: logged in` : `✗ ${name}: still not detected as logged in — continuing anyway`);
+  console.log(
+    ok
+      ? `✓ ${name}: logged in`
+      : `✗ ${name}: still not detected as logged in after ${LOGIN_TIMEOUT_MS / 60000} minutes — continuing anyway`
+  );
   return ok;
 }

@@ -42,7 +42,7 @@ Remedy Kombucha Wild Berry 750mL
 Remedy Organic Kombucha Raspberry Lemonade 750mL
 Remedy Kombucha Pomegranate 750mL
 Gourmet Tomato each | tomato, tomatoes, tomates
-Macro Organic Tomatoes Diced 400g | diced tomatoes, diced tomato, canned tomatoes, tinned tomatoes
+Macro Organic Tomatoes Diced 400g | diced tomatoes, diced tomato, canned tomatoes, tinned tomatoes, tin tomatoes, tins tomatoes
 Sandhurst Tomatoes Sundried 125g | sun dried tomatoes, sundried tomatoes, sun dried tomato, sundried tomato
 Fresh Broccoli each
 Carrot Fresh each
@@ -88,6 +88,7 @@ Kale Fresh Bunch each
 Woolworths Green Basil Punnet 15g
 Woolworths Rosemary Fresh Herb Punnet 10g
 Pumpkin Jarrahdale Grey Cut each
+Butternut Pumpkin Cut each | butternut squash, butternut, abóbora de pescoço, abobora de pescoco, neck pumpkin
 Woolworths Beef Chuck Steak Medium 380g - 800g
 Macro Free Range Chicken Thigh Fillet 800g - 1.1kg
 Macro Grass Fed Lean Beef Mince 500g
@@ -172,7 +173,7 @@ The Odd Bunch Avocado Prepacked
 The Odd Bunch Lime Prepacked
 The Odd Bunch Lemon Prepacked 500g | lemon juice, lemon
 Woolworths Capsicum Green
-Woolworths Fresh Continental Parsley Bunch
+Woolworths Fresh Continental Parsley Bunch | parsley, cheiro-verde, cheiro verde, green scent
 Woolworths Fresh Herb Coriander Bunch
 Woolworths Green Asparagus Bunch Green
 Woolworths Roma Tomato Punnet

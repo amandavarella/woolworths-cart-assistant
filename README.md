@@ -53,20 +53,22 @@ amount/unit is stripped automatically to match your preferred products (e.g.
 `baby potatoes`, `coconut milk`). This file is git-ignored.
 
 **Ingredients are translated/localized to Australian English automatically.**
-The path is `portuguese → Australian English` and `US English → Australian
-English`. If you paste a list with non-English lines (e.g. Portuguese), each
-one is detected and translated to English before matching or search ever
-sees it — Woolworths' catalogue and this project's preferred-item matching
-are both English-only, so an untranslated ingredient would otherwise search
-literally and match unrelated products. Every ingredient (translated or
-already English) is then run through a small Australian-English glossary
-that swaps American/generic grocery terms for the Australian ones Woolworths
-actually uses (e.g. "cilantro" → "coriander", "bell pepper" → "capsicum",
-"ground beef" → "beef mince"). Translation uses a free, unofficial Google
-Translate client (no API key) in a single batched request per run and fails
-safe (falls back to the original text) if unreachable; the Australian
-English glossary always runs regardless, since it needs no network. Turn off
-just the translation step with `AUTO_TRANSLATE=false`. See
+Pastes may be in Portuguese or American English; both are translated when
+found. The path is `portuguese → Australian English` and `US English →
+Australian English`. A curated glossary runs first for known phrases (e.g.
+`cheiro-verde` → parsley, `butternut squash` → butternut pumpkin), then any
+remaining non-English lines are machine-translated before matching or search
+ever sees them — Woolworths' catalogue and this project's preferred-item
+matching are both English-only, so an untranslated ingredient would otherwise
+search literally and match unrelated products. Every ingredient (translated
+or already English) is then run through the Australian-English glossary again
+so US/generic grocery terms map to the ones Woolworths actually uses (e.g.
+"cilantro" → "coriander", "bell pepper" → "capsicum", "ground beef" →
+"beef mince"). Machine translation uses a free, unofficial Google Translate
+client (no API key) in a single batched request per run and fails safe (falls
+back to the original text, or a glossary hit) if unreachable; the glossary
+always runs regardless, since it needs no network. Turn off just the
+machine-translation step with `AUTO_TRANSLATE=false`. See
 [`get-clove-items`](./skills/get-clove-items/SKILL.md#automatic-translation)
 for details. The same applies to AnyList item names.
 

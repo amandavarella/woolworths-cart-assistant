@@ -25,15 +25,24 @@ There are two modes, chosen by `CLOVE_MODE`:
 1 x 14 ounce can coconut milk
 ```
 
-   Blank lines and lines starting with `#` are ignored. If the file doesn't
-   exist yet, the first run creates a template for you to fill in.
+   Blank lines, lines starting with `#`, and Clove section headers
+   (`Fruit and Vegetables`, `Herbs and Spices`, `Others`, etc.) are ignored.
+   If the file doesn't exist yet, the first run creates a template for you to
+   fill in. Lines may be in Portuguese or American English — they are
+   translated/localized automatically (see below).
 2. Each line is parsed into `{ full, name }` where `full` is the whole line and
    `name` is the ingredient with any leading amount/unit stripped (e.g.
-   `baby potatoes`, `coconut milk`).
+   `baby potatoes`, `coconut milk`). Tin/can amounts become `tinned …`
+   (e.g. `2 tins tomatoes` → `tinned tomatoes`).
 3. **Ingredients are auto-translated/localized to Australian English** (see below).
 4. Results are written to the hand-off file.
 
 ## Automatic translation
+
+Pastes and AnyList names may be in **Portuguese**, **American English**, or
+already Australian English. Whenever a non-Australian term is found, this skill
+**must translate/localize it** before matching or Woolworths search ever sees
+it. Do not leave Portuguese or US grocery wording as-is.
 
 The translation path is:
 
@@ -41,43 +50,46 @@ The translation path is:
 - **US English → Australian English**
 
 Woolworths' catalogue and this project's preferred-item matching are both
-English-only, so an ingredient pasted in another language (e.g. Portuguese)
-would otherwise be searched for literally and match unrelated products, and
-an ingredient in American grocery terminology (e.g. "cilantro", "bell
-pepper") would otherwise miss Woolworths' Australian product names. Before
+English-only (Australian product names), so an ingredient pasted in another
+language (e.g. Portuguese `cheiro-verde`, `abóbora de pescoço`) would otherwise
+be searched for literally and match unrelated products, and an ingredient in
+American grocery terminology (e.g. "cilantro", "bell pepper", "butternut
+squash") would otherwise miss Woolworths' Australian product names. Before
 the hand-off file is written, this runs in two steps:
 
-1. **Foreign language → English.** Every ingredient is auto-detected and any
-   non-English ones are translated to English in a single batched request
+1. **Curated glossary first (always).** Known Portuguese phrases, US grocery
+   terms, and common machine-translation misfires are rewritten via the
+   glossary in `src/translate.js` (e.g. `cheiro-verde` → `parsley`,
+   `abóbora de pescoço` / `butternut squash` → `butternut pumpkin`,
+   "cilantro" → "coriander", "bell pepper" → "capsicum"). No network needed.
+2. **Foreign language → English (machine).** Any remaining non-English names
+   are auto-detected and translated to English in a single batched request
    (via [`google-translate-api-x`](https://www.npmjs.com/package/google-translate-api-x),
    a free, unofficial Google Translate client — no API key needed). English
-   ingredients pass through this step untouched.
-2. **English → Australian English.** Every ingredient (whether just
-   translated or already English) is then run through a small curated
-   glossary (`src/translate.js`) that swaps American/generic grocery terms
-   for the Australian ones Woolworths actually lists products under — e.g.
-   "cilantro" → "coriander", "bell pepper" → "capsicum", "ground beef" →
-   "beef mince", "all purpose flour" → "plain flour". This step needs no
-   network and always runs, even if step 1 is disabled or fails.
+   ingredients pass through this step untouched. The glossary then runs again
+   on the machine result so US terms and known bad translations are still
+   corrected.
 
 - A translated/localized item keeps its original text too: `{ full, name, translated: true, originalFull, originalName }`.
 - Only the trailing amount-stripped `name` is translated; the leading
   amount/unit in `full` (e.g. `"2 "`) is preserved, so quantity estimation
-  still works on the translated line.
-- Set `AUTO_TRANSLATE=false` in `.env` to disable step 1 (e.g. if you're
-  offline or the translation endpoint is unavailable) — non-English
-  ingredients then flow through unchanged, but the Australian English
-  glossary (step 2) still applies to any already-English text.
+  still works on the translated line. Tin/can amounts are kept as the
+  adjective `tinned` on the name (e.g. `2 tins tomatoes` → `tinned tomatoes`)
+  so canned products can be preferred over fresh.
+- Paste-mode also drops Clove section headers (`Fruit and Vegetables`,
+  `Herbs and Spices`, `Others`, etc.) so they are never treated as ingredients.
+- Set `AUTO_TRANSLATE=false` in `.env` to disable the machine-translation
+  step (e.g. if you're offline or the translation endpoint is unavailable) —
+  non-English ingredients then rely on the curated glossary alone for known
+  phrases; unknown foreign text stays unchanged, but the glossary still
+  applies to any already-English US terms.
 - **Fails safe**: if the translation request errors (offline, rate-limited,
-  endpoint change), a warning is logged, the Australian English glossary
-  still runs on its own, and translation for foreign-language items falls
-  back to the original text — a flaky translation call never breaks the
-  pipeline.
-- Step 1 is best-effort machine translation, not a curated glossary — it can
-  produce imperfect results for local terminology (e.g. Portuguese
-  "pimentão" → "pepper" rather than "capsicum"). The step 2 glossary catches
-  the most common of these gaps (e.g. bare "red pepper"/"yellow pepper" →
-  "red capsicum"/"yellow capsicum"), but is not exhaustive.
+  endpoint change), a warning is logged, the glossary still runs on its own,
+  and translation for foreign-language items falls back to the original text
+  (or a glossary hit) — a flaky translation call never breaks the pipeline.
+- Machine translation is best-effort and not exhaustive — prefer adding a
+  glossary entry in `src/translate.js` (and a preferred-item alias) when a
+  Portuguese or US term repeatedly mis-translates.
 - Applies in both paste and web mode, since it runs after ingredients are
   parsed/extracted either way.
 

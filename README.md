@@ -34,7 +34,8 @@ The browser skills each open their own window and reuse a saved login profile, s
 
 ```bash
 npm install
-cp .env.example .env       # adjust if you like; defaults work out of the box
+cp .env.example .env                         # adjust if you like; defaults work out of the box
+cp preferred-items.example.txt preferred-items.txt   # your local preferred products (git-ignored)
 ```
 
 ## Your Clove list (paste mode)
@@ -133,9 +134,10 @@ Added: 8   Cart now: 8 items, $34.20
 
 ## Your preferred items list
 
-Edit `preferred-items.txt` — one Woolworths product name per line. Lines
-starting with `#` are ignored. These are the exact products bought whenever a
-Clove or AnyList ingredient matches them by keyword.
+Copy `preferred-items.example.txt` to `preferred-items.txt` and put one
+Woolworths product name per line. Lines starting with `#` are ignored. These
+are the exact products bought whenever a Clove or AnyList ingredient matches
+them by keyword. `preferred-items.txt` is git-ignored.
 
 A line can add extras after `|`:
 
@@ -207,7 +209,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | `ANYLIST_CREDENTIALS_FILE` | `./.anylist_credentials` | Encrypted AnyList token cache (git-ignored) |
 | `WOOLWORTHS_URL` | `https://www.woolworths.com.au` | Woolworths base URL |
 | `ORDER_ID` / `ORDER_URL` | _(unset)_ | A specific order for `sync-preferred-from-order` (else latest) |
-| `PREFERRED_ITEMS_FILE` | `./preferred-items.txt` | Your preferred products |
+| `PREFERRED_ITEMS_FILE` | `./preferred-items.txt` | Your preferred products (git-ignored; copy from `preferred-items.example.txt`) |
 | `IGNORE_ITEMS_FILE` | `./ignore-items.txt` | Items to drop before mapping (never bought) |
 | `MAX_QTY` | `12` | Safety cap on quantity per product |
 | `OUTPUT_DIR` | `./output` | Where skills write hand-off files and reports |
@@ -218,8 +220,9 @@ Woolworths Fresh Herb Coriander Bunch each
 ```
 AGENTS.md                  # agent guidelines (CLAUDE.md is a symlink to this)
 CLAUDE.md -> AGENTS.md
-preferred-items.txt        # your preferred Woolworths products
-ignore-items.txt           # items to drop before mapping (never bought)
+preferred-items.example.txt  # example preferred products (copy to preferred-items.txt)
+preferred-items.txt          # git-ignored; your preferred Woolworths products
+ignore-items.txt             # items to drop before mapping (never bought)
 src/                       # shared logic imported by the skill scripts
   config.js  browser.js  clove.js  anylist.js  preferences.js  quantity.js  woolworths.js
 skills/

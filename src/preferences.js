@@ -163,6 +163,12 @@ function parsePreferredLine(line) {
 }
 
 export function loadPreferred(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `Preferred items file not found: ${filePath}. ` +
+        `Copy preferred-items.example.txt to preferred-items.txt and add your products.`
+    );
+  }
   const raw = fs.readFileSync(filePath, "utf8");
   const seen = new Set();
   const items = [];

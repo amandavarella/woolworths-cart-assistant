@@ -1,0 +1,21 @@
+# Preferred Woolworths products: one product per line.
+# When an item from any source (e.g. Clove or AnyList) matches one of these
+# (by keyword overlap), this exact product is what gets added to your
+# Woolworths cart.
+# Lines starting with '#' and blank lines are ignored.
+#
+# Copy this file to preferred-items.txt and replace the examples with your
+# products. preferred-items.txt is git-ignored.
+#
+# Optional extras after the product name, separated by '|':
+#   - a comma-separated list of extra match keywords (aliases), e.g. common
+#     misspellings or generic terms that should also route to this product
+#   - the flag `strict`, meaning only ever add this exact product. If it's
+#     not found in Woolworths search results, the item is reported as
+#     unavailable instead of a different product being substituted
+#
+#   Nestle Plaistowe Cocoa Powder Premium 180g | cocoa, plastowe | strict
+
+a2 Milk Full Cream Milk 3L
+Cobram Estate Classic Extra Virgin Olive Oil
+Woolworths Fresh Herb Coriander Bunch each

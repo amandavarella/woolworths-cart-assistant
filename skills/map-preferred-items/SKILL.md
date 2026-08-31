@@ -118,7 +118,7 @@ Reads from `.env`: `PREFERRED_ITEMS_FILE`, `IGNORE_ITEMS_FILE`, `OUTPUT_DIR`.
 
 ## Notes
 
-- Edit `preferred-items.txt` to control exactly which Woolworths product is bought for a given ingredient.
+- Edit `preferred-items.txt` to control exactly which Woolworths product is bought for a given ingredient. That file is git-ignored; copy `preferred-items.example.txt` to start.
 - Edit `ignore-items.txt` to drop items you never want bought (e.g. things you grow or get elsewhere). One entry per line; matching is case-insensitive and word-based. Use `category: <name>` to drop an entire AnyList category (e.g. Officeworks, Pharmacy, Chemist) rather than listing each item.
 - Matching requires the ingredient's head noun (its last meaningful word) to appear in the preferred product or one of its aliases, which avoids spurious matches on generic descriptors like "baby" or "fresh".
 - Preparation states (raw vs cooked, peeled vs unpeeled) and the protein (beef, chicken, lamb, pork, turkey, fish, vegetable) are never swapped; keep a separate preferred line for each variety you buy, e.g. a raw prawn product and a cooked one, or a beef stock and a chicken one, and the right one is picked per ingredient.

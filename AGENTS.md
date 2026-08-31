@@ -72,10 +72,10 @@ The browser skills detect whether you are logged in and, if not, open a visible 
 | Type of value | Where it goes |
 |---------------|---------------|
 | Credentials / tokens / personal settings | `.env` (git-ignored) — add new keys to `.env.example` |
-| Your preferred products | `preferred-items.txt` |
+| Your preferred products | `preferred-items.txt` (git-ignored; copy from `preferred-items.example.txt`) |
 | Anything secret or session-related | `PROFILE_DIR` (git-ignored) |
 
-**Never commit**: `.env`, the browser profile, or anything under `output/`.
+**Never commit**: `.env`, the browser profile, `preferred-items.txt`, or anything under `output/`.
 
 ## Conventions
 

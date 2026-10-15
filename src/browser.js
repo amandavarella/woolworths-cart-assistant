@@ -20,10 +20,12 @@ const LOGIN_POLL_MS = 3000;
 const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
- * Ensure the given page is logged into a site. Detection is heuristic; if it
+ * Ensure the given page is logged into a site. Detection is heuristic. If it
  * can't confirm a logged-in state, it opens a visible window and polls until
- * you finish logging in there (no terminal Enter needed — so agent-driven
- * runs can continue once the browser session is valid).
+ * you finish logging in there (no terminal Enter needed, so agent-driven
+ * runs can continue once the browser session is valid). If the wait ends
+ * without a confirmed login, this throws. Callers must not add to the cart,
+ * sync orders, or scrape after that.
  */
 export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -43,6 +45,7 @@ export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) 
   console.log(`\n⚠ ${name}: you don't appear to be logged in.`);
   console.log(`  A browser window is open. Please log into ${name} there.`);
   console.log(`  Waiting up to ${LOGIN_TIMEOUT_MS / 60000} minutes (checking every ${LOGIN_POLL_MS / 1000}s)...`);
+  console.log(`  Nothing is added until login is confirmed.`);
 
   const deadline = Date.now() + LOGIN_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -56,11 +59,12 @@ export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) 
   // One last reload in case cookies landed but the open tab still looks logged out.
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2500);
-  const ok = await isLoggedIn(page);
-  console.log(
-    ok
-      ? `✓ ${name}: logged in`
-      : `✗ ${name}: still not detected as logged in after ${LOGIN_TIMEOUT_MS / 60000} minutes — continuing anyway`
+  if (await isLoggedIn(page)) {
+    console.log(`✓ ${name}: logged in`);
+    return true;
+  }
+
+  throw new Error(
+    `${name}: still not logged in after ${LOGIN_TIMEOUT_MS / 60000} minutes. Stopped without adding or changing anything. Log in in the browser window and run again.`
   );
-  return ok;
 }

@@ -96,7 +96,7 @@ the hand-off file is written, this runs in two steps:
 ## Web mode (legacy)
 
 1. Launches a persistent browser (profile from `PROFILE_DIR`, so the login is reused).
-2. Ensures you are logged into Clove. If not, it opens a visible window and waits for you to log in, then continues.
+2. Ensures you are logged into Clove. If not, it opens a visible window and waits for you to log in, then continues. If login is not confirmed, the skill stops and does not write ingredients from the page.
 3. Scrolls the groceries page until the item list stabilises (handles lazy rendering).
 4. Extracts each unchecked ingredient as `{ full, name }`, skipping already-ticked items and section headers.
 5. Writes the results to the hand-off file.

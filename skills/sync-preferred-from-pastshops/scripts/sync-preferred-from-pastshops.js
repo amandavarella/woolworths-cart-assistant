@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
 import { launchBrowser, ensureLoggedIn } from "../../../src/browser.js";
-import { isWoolworthsLoggedIn, readPastShopProducts } from "../../../src/woolworths.js";
+import { isWoolworthsLoggedIn, readPastShopProducts, selectDeliveryWindowIfStuck } from "../../../src/woolworths.js";
 import { appendPreferred } from "../../../src/preferences.js";
 
 /**
@@ -31,6 +31,8 @@ export async function run(cfg = loadConfig()) {
       isLoggedIn: isWoolworthsLoggedIn,
       headless: cfg.headless,
     });
+
+    await selectDeliveryWindowIfStuck(page);
 
     console.log("\nReading your past-shops list (all pages)...");
     let { pageCount, perPage, products } = await readPastShopProducts(page, { base: cfg.wwUrl });

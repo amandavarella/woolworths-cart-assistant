@@ -12,7 +12,7 @@ This is the per-order counterpart to `sync-preferred-from-pastshops`: instead of
 ## What it does
 
 1. Launches the project's persistent Chrome profile (`PROFILE_DIR`) so your saved Woolworths login is reused. (Per the project's browser preference, this uses the project's own logged-in browser — **not** the Cursor/built-in browser.)
-2. Ensures you are logged into Woolworths. If not, it opens a visible window and waits for you to log in, then continues. If login is not confirmed, the skill stops and does not change `preferred-items.txt`.
+2. Ensures you are logged into Woolworths. If not, it opens a visible window and waits for you to log in, then continues. If login is not confirmed, the skill stops and does not change `preferred-items.txt`. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues.
 3. Picks the order to read:
    - If `ORDER_ID` or `ORDER_URL` is set, uses that order.
    - Otherwise opens **My Account → My Orders** and picks your **latest** order.

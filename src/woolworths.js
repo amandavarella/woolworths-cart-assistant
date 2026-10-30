@@ -68,7 +68,9 @@ function __isMarketplace(startEl) {
   return false;
 }`;
 
-// In-page helper: collect every "Add to cart" button (piercing shadow DOM)
+// In-page helper: collect every Add button (piercing shadow DOM).
+// Woolworths labels the control "Add"; older pages used "Add to cart".
+// The aria-label is still "Add <product> to cart".
 // together with its product name and whether it's a marketplace listing.
 const COLLECT_FN = `
 ${MARKETPLACE_FN}
@@ -82,7 +84,7 @@ function __collectAddButtons() {
       if (el.tagName === 'BUTTON') {
         const aria = el.getAttribute('aria-label') || '';
         const txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
-        if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
+        if ((/^add$/i.test(txt) || /^add to cart$/i.test(txt)) && /^add /i.test(aria)) {
           const name = aria.replace(/^Add\\s+/i, '').replace(/\\s+to cart\\s*$/i, '').replace(/\\s+/g, ' ').trim();
           out.push({ name, marketplace: __isMarketplace(el) });
         }
@@ -152,6 +154,147 @@ function chooseProduct(products, kws, exactName, strict, prep) {
   return { ...fallback, confidence: "very-low" };
 }
 
+function deliveryDialogIsOpen() {
+  return !!([...document.querySelectorAll("[role=dialog], dialog")].find(
+    (el) => /select a time/i.test(el.innerText || "") && el.querySelector(".day-description")
+  ));
+}
+
+function dismissGotItDialog() {
+  const btn = [...document.querySelectorAll("button")].find((el) =>
+    /ok,\s*got it/i.test((el.innerText || "").replace(/\s+/g, " "))
+  );
+  if (!btn) return false;
+  btn.click();
+  return true;
+}
+
+function clickSunday() {
+  const dialog = [...document.querySelectorAll("[role=dialog], dialog")].find(
+    (el) => /select a time/i.test(el.innerText || "") && el.querySelector(".day-description")
+  );
+  if (!dialog) return { ok: false, reason: "dialog closed" };
+  const sun = [...dialog.querySelectorAll("label.day")].find((el) =>
+    [...el.querySelectorAll(".day-description")].some((d) => d.textContent.trim() === "Sun")
+  );
+  if (!sun) return { ok: false, reason: "Sunday not shown" };
+  sun.click();
+  return { ok: true };
+}
+
+function scrollDeliveryDatesRight() {
+  const dialog = [...document.querySelectorAll("[role=dialog], dialog")].find(
+    (el) => /select a time/i.test(el.innerText || "") && el.querySelector(".day-description")
+  );
+  if (!dialog) return false;
+  const btn = [...dialog.querySelectorAll("button")].find(
+    (el) => (el.innerText || "").replace(/\s+/g, " ").trim() === "Scroll right"
+  );
+  if (!btn) return false;
+  btn.click();
+  return true;
+}
+
+function clickAfternoon() {
+  const dialog = [...document.querySelectorAll("[role=dialog], dialog")].find(
+    (el) => /select a time/i.test(el.innerText || "") && el.querySelector(".day-description")
+  );
+  if (!dialog) return { ok: false, reason: "dialog closed" };
+  const afternoon = [...dialog.querySelectorAll("label.time-slot-filter")].find((el) =>
+    [...el.querySelectorAll(".time-title")].some((d) => d.textContent.trim() === "Afternoon")
+  );
+  if (!afternoon) return { ok: false, reason: "Afternoon not shown" };
+  afternoon.click();
+  return { ok: true };
+}
+
+function clickFourToSeven() {
+  const dialog = [...document.querySelectorAll("[role=dialog], dialog")].find(
+    (el) => /select a time/i.test(el.innerText || "") && el.querySelector(".day-description")
+  );
+  if (!dialog) return { ok: false, reason: "dialog closed" };
+  const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const slots = [...dialog.querySelectorAll(".time-slot-list label.time-slot")];
+  const match = slots.find((el) => /4:00 pm 7:00 pm/i.test(norm(el.innerText)));
+  if (!match) {
+    return {
+      ok: false,
+      reason: "4:00pm to 7:00pm not listed",
+      available: slots.map((el) => norm(el.innerText)),
+    };
+  }
+  match.click();
+  return { ok: true, text: norm(match.innerText) };
+}
+
+function clickDeliveryConfirm() {
+  const dialogs = [...document.querySelectorAll("[role=dialog], dialog")];
+  const btn = dialogs
+    .flatMap((el) => [...el.querySelectorAll("button")])
+    .find((el) => /continue|confirm|reserve|\bselect\b|done|save/i.test((el.innerText || "").replace(/\s+/g, " ")));
+  if (!btn) return { clicked: false };
+  const text = (btn.innerText || "").replace(/\s+/g, " ").trim();
+  btn.click();
+  return { clicked: true, text };
+}
+
+/**
+ * If Woolworths is blocked on the delivery address and time screen, choose
+ * Sunday, Afternoon, and the 4:00pm to 7:00pm window. Does nothing when that
+ * screen is not open, so an already chosen window is left alone.
+ */
+export async function selectDeliveryWindowIfStuck(page) {
+  if (await page.evaluate(dismissGotItDialog)) {
+    await page.waitForTimeout(400);
+  }
+  if (!(await page.evaluate(deliveryDialogIsOpen))) return { stuck: false };
+
+  console.log("Delivery time screen is open. Choosing Sunday, Afternoon, 4:00pm to 7:00pm.");
+
+  let day = await page.evaluate(clickSunday);
+  for (let i = 0; day.ok === false && day.reason === "Sunday not shown" && i < 5; i++) {
+    const scrolled = await page.evaluate(scrollDeliveryDatesRight);
+    if (!scrolled) break;
+    await page.waitForTimeout(300);
+    day = await page.evaluate(clickSunday);
+  }
+  if (!day.ok) {
+    console.log(`  Could not choose Sunday (${day.reason}).`);
+    return { stuck: true, selected: false, reason: day.reason };
+  }
+  await page.waitForTimeout(500);
+
+  const period = await page.evaluate(clickAfternoon);
+  if (!period.ok) {
+    console.log(`  Could not choose Afternoon (${period.reason}).`);
+    return { stuck: true, selected: false, reason: period.reason };
+  }
+  await page.waitForTimeout(700);
+
+  let slot = { ok: false, reason: "slots not loaded" };
+  for (let i = 0; i < 6; i++) {
+    slot = await page.evaluate(clickFourToSeven);
+    if (slot.ok) break;
+    await page.waitForTimeout(400);
+  }
+  if (!slot.ok) {
+    console.log(`  Could not choose 4:00pm to 7:00pm (${slot.reason}).`);
+    return { stuck: true, selected: false, reason: slot.reason, available: slot.available };
+  }
+  await page.waitForTimeout(800);
+
+  const confirm = await page.evaluate(clickDeliveryConfirm);
+  await page.waitForTimeout(600);
+  const stillOpen = await page.evaluate(deliveryDialogIsOpen);
+  if (stillOpen && !confirm.clicked) {
+    console.log(`  Clicked ${slot.text}, and the delivery screen is still open.`);
+    return { stuck: true, selected: false, reason: "screen still open", slot: slot.text };
+  }
+
+  console.log(`  Selected ${slot.text}`);
+  return { stuck: true, selected: true, slot: slot.text, confirm };
+}
+
 /**
  * Search Woolworths for `term`, choose the best product, and click Add to cart
  * (adds a single unit). Quantity is raised separately via setQuantity().
@@ -163,8 +306,14 @@ function chooseProduct(products, kws, exactName, strict, prep) {
  * state (raw, cooked, …) no result matches.
  */
 export async function addToCart(page, { base, term, ingredientName, exactName, strict }) {
-  await page.goto(SEARCH(base, term), { waitUntil: "domcontentloaded" });
-  const count = await waitForResults(page);
+  const openSearch = () => page.goto(SEARCH(base, term), { waitUntil: "domcontentloaded" });
+  await openSearch();
+  if ((await selectDeliveryWindowIfStuck(page)).selected) await openSearch();
+  let count = await waitForResults(page);
+  if (!count && (await selectDeliveryWindowIfStuck(page)).stuck) {
+    await openSearch();
+    count = await waitForResults(page);
+  }
   if (!count) return { status: "NO_RESULTS", term };
 
   const products = await page.evaluate(`(() => { ${COLLECT_FN}; return __collectAddButtons(); })()`);
@@ -202,7 +351,7 @@ export async function addToCart(page, { base, term, ingredientName, exactName, s
         if (el.tagName === "BUTTON") {
           const aria = el.getAttribute("aria-label") || "";
           const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
-          if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
+          if ((/^add$/i.test(txt) || /^add to cart$/i.test(txt)) && /^add /i.test(aria)) {
             const name = aria.replace(/^Add\s+/i, "").replace(/\s+to cart\s*$/i, "").replace(/\s+/g, " ").trim();
             if (name === target) { el.click(); done = true; return; }
           }
@@ -290,7 +439,7 @@ function __collectProductNames() {
       if (el.tagName === 'BUTTON') {
         const aria = el.getAttribute('aria-label') || '';
         const txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
-        if (/^add to cart$/i.test(txt) && /^add /i.test(aria)) {
+        if ((/^add$/i.test(txt) || /^add to cart$/i.test(txt)) && /^add /i.test(aria)) {
           if (__isMarketplace(el)) continue; // skip third-party "Sold by" listings
           const name = aria
             .replace(/^Add\\s+/i, '')

@@ -9,6 +9,7 @@ import {
   setQuantity,
   readTrolley,
   isWoolworthsLoggedIn,
+  selectDeliveryWindowIfStuck,
 } from "../../../src/woolworths.js";
 
 /**
@@ -43,6 +44,8 @@ export async function run(cfg = loadConfig()) {
       isLoggedIn: isWoolworthsLoggedIn,
       headless: cfg.headless,
     });
+
+    await selectDeliveryWindowIfStuck(page);
 
     console.log("\nAdding to Woolworths cart...");
     const results = [];

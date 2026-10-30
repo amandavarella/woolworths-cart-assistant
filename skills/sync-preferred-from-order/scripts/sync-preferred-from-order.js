@@ -8,6 +8,7 @@ import {
   isWoolworthsLoggedIn,
   findLatestOrderId,
   readOrderProducts,
+  selectDeliveryWindowIfStuck,
 } from "../../../src/woolworths.js";
 import { appendPreferred } from "../../../src/preferences.js";
 
@@ -34,6 +35,8 @@ export async function run(cfg = loadConfig()) {
       isLoggedIn: isWoolworthsLoggedIn,
       headless: cfg.headless,
     });
+
+    await selectDeliveryWindowIfStuck(page);
 
     let orderId = cfg.orderId;
     if (orderId) {

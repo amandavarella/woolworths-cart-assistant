@@ -5,12 +5,12 @@ description: Add a Woolworths shopping plan to your online Woolworths cart. Sear
 
 # Add To Woolworths Cart
 
-Read the shopping plan and fill your Woolworths cart. For each item it searches Woolworths, picks the best **grocery** match (food plus everyday consumables — personal care, toiletries, health, and cleaning products), clicks "Add to cart", and raises the quantity to the amount estimated from the source line.
+Read the shopping plan and fill your Woolworths cart. For each item it searches Woolworths, picks the best **grocery** match (food plus everyday consumables — personal care, toiletries, health, and cleaning products), clicks Add (the button label; the aria-label is still "Add <product> to cart"), and raises the quantity to the amount estimated from the source line.
 
 ## What it does
 
 1. Reads `output/shopping-plan.json` (produced by `map-preferred-items`).
-2. Launches a persistent browser and ensures you are logged into Woolworths (opens a visible window and polls until you log in if needed; session is reused afterwards). No terminal Enter press is required. If login is not confirmed, the skill stops and does not add anything to the cart.
+2. Launches a persistent browser and ensures you are logged into Woolworths (opens a visible window and polls until you log in if needed; session is reused afterwards). No terminal Enter press is required. If login is not confirmed, the skill stops and does not add anything to the cart. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues. An already chosen window is left alone when that screen is not open.
 3. For each plan entry:
    - Searches Woolworths for `term`.
    - Chooses the best match. `preferred` entries bias toward the exact product name; only non-consumable hard goods (kitchen tools/gadgets and hard kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — produce, food and drink, and everyday consumables (personal care, toiletries, cleaning) are all eligible.

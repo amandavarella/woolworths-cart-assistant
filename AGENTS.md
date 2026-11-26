@@ -16,7 +16,28 @@ Reads grocery ingredients from Clove and [AnyList](https://www.anylist.com/web),
 
 ### Default run: AnyList items to the cart
 
-The user now adds Clove items to the Woolworths cart directly from the Clove mobile app. So the **default** for any request to fill the cart ("add my groceries", "fill the cart", "run the pipeline") is **AnyList only**: run `get-anylist-items`, then `map-preferred-items`, then `add-to-woolworths-cart`. Skip the Clove step unless the user asks for Clove items. The Clove skill and the Clove side of the pipeline still work and stay as they are.
+The user now adds Clove items to the Woolworths cart directly from the Clove mobile app. So the **default** for any request to fill the cart ("add my groceries", "fill the cart", "run the pipeline") is **AnyList only**. Skip the Clove step unless the user asks for Clove items. The Clove skill and the Clove side of the pipeline still work and stay as they are.
+
+Run the default in this order:
+
+1. **Confirm the Woolworths session is logged in first**, before reading anything from AnyList. This uses the same helpers as `add-to-woolworths-cart`: it prints `✓ Woolworths: already logged in`, or opens a window and waits for the user to log in. If it ends with an error, stop and tell the user; do not go on to the next steps.
+
+   ```bash
+   node --input-type=module -e '
+   import { loadConfig } from "./src/config.js";
+   import { launchBrowser, ensureLoggedIn } from "./src/browser.js";
+   import { isWoolworthsLoggedIn } from "./src/woolworths.js";
+   const cfg = loadConfig();
+   const context = await launchBrowser(cfg);
+   try {
+     const page = await context.newPage();
+     await ensureLoggedIn(page, { url: cfg.wwUrl, name: "Woolworths", isLoggedIn: isWoolworthsLoggedIn, headless: cfg.headless });
+   } finally { await context.close(); }'
+   ```
+
+2. `get-anylist-items`
+3. `map-preferred-items`. Read the plan before adding: the matcher can pick a wrong product on a shared word (for example "Rubbish Bags" matched "Woolworths Red Onions Bag 1kg"). Fix clear mistakes in `output/shopping-plan.json` and tell the user what was changed.
+4. `add-to-woolworths-cart`
 
 When running AnyList only, check `output/` for a leftover `clove-items.json` first. `map-preferred-items` merges every source file it finds, so an old Clove file would put a past Clove list back in the cart. Ask before removing it, or move it aside.
 

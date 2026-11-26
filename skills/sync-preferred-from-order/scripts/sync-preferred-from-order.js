@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
 import { launchBrowser, ensureLoggedIn } from "../../../src/browser.js";
 import {
+  WOOLWORTHS_LOGIN_URL,
   isWoolworthsLoggedIn,
   findLatestOrderId,
   readOrderProducts,
@@ -33,6 +34,7 @@ export async function run(cfg = loadConfig()) {
       url: `${cfg.wwUrl}/shop/myaccount/myorders`,
       name: "Woolworths",
       isLoggedIn: isWoolworthsLoggedIn,
+      loginUrl: WOOLWORTHS_LOGIN_URL,
       headless: cfg.headless,
     });
 

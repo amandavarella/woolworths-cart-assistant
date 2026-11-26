@@ -10,7 +10,7 @@ Open the Woolworths **My Lists → past shops → All Products** ("everything") 
 ## What it does
 
 1. Launches the project's persistent Chrome profile (`PROFILE_DIR`) so your saved Woolworths login is reused. (Per the project's browser preference, this uses the project's own logged-in browser — **not** the Cursor/built-in browser.)
-2. Ensures you are logged into Woolworths. If not, it opens a visible window and waits for you to log in, then continues. If login is not confirmed, the skill stops and does not change `preferred-items.txt`. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues.
+2. Ensures you are logged into Woolworths (a signed-in, non-guest shopper). If not, it opens a visible window on the Woolworths sign-in page and waits for you to log in, then continues. If login is not confirmed, the skill stops and does not change `preferred-items.txt`. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues.
 3. Navigates `/shop/mylists/pastshops/everything?pageNumber=N`, reading the page count from the pager and walking every page.
 4. On each page it scrolls to mount lazily-rendered tiles, then collects each product name from its "Add to cart" button (piercing shadow DOM). Third-party marketplace listings (tiles showing a "Sold by &lt;seller&gt;" label) are skipped, so they never enter your preferred-items list.
 5. De-duplicates the names (case-insensitive, order preserved) and writes a snapshot to `output/past-shop-items.json`.
@@ -57,6 +57,6 @@ Reads from `.env` (see `.env.example`): `WOOLWORTHS_URL`, `PREFERRED_ITEMS_FILE`
 
 ## Notes
 
-- First run must be **non-headless** (`HEADLESS=false`) so you can log into Woolworths. After that the saved session lets it run headless.
+- Run **non-headless** (`HEADLESS=false`). Woolworths blocks headless Chrome ("Access Denied"); the skill stops with that message and changes nothing.
 - Only purchasable tiles (those with an "Add to cart" button) are captured. Unavailable / out-of-stock items have no add button and are skipped — they aren't usable as preferred products anyway, so the captured count can be slightly lower than the "All Products (N)" heading.
 - This skill only **adds** to `preferred-items.txt`; it never edits or removes existing entries. Everyday consumables — food, personal care, toiletries, and cleaning products — are all kept. Review and prune the list by hand only if you want to drop something you've bought before.

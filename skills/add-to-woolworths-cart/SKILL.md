@@ -10,7 +10,7 @@ Read the shopping plan and fill your Woolworths cart. For each item it searches 
 ## What it does
 
 1. Reads `output/shopping-plan.json` (produced by `map-preferred-items`).
-2. Launches a persistent browser and ensures you are logged into Woolworths (opens a visible window and polls until you log in if needed; session is reused afterwards). No terminal Enter press is required. If login is not confirmed, the skill stops and does not add anything to the cart. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues. An already chosen window is left alone when that screen is not open.
+2. Launches a persistent browser and ensures you are logged into Woolworths (if not, opens a visible window on the Woolworths sign-in page and polls until you log in; the session is reused afterwards). Login counts only when Woolworths reports a signed-in, non-guest shopper. No terminal Enter press is required. If login is not confirmed, the skill stops and does not add anything to the cart. If a delivery address and time screen is blocking the page, it chooses Sunday, Afternoon, and the 4:00pm to 7:00pm window, then continues. An already chosen window is left alone when that screen is not open.
 3. For each plan entry:
    - Searches Woolworths for `term`.
    - Chooses the best match. `preferred` entries bias toward the exact product name; only non-consumable hard goods (kitchen tools/gadgets and hard kitchenware, electronics, clothing, toys, stationery, garden, pet gear) are filtered out — produce, food and drink, and everyday consumables (personal care, toiletries, cleaning) are all eligible.
@@ -43,7 +43,7 @@ Reads from `.env`: `WOOLWORTHS_URL`, `PROFILE_DIR`, `HEADLESS`, `BROWSER_CHANNEL
 
 ## Notes
 
-- First run must be **non-headless** (`HEADLESS=false`) so you can log into Woolworths once.
+- Run **non-headless** (`HEADLESS=false`). Woolworths blocks headless Chrome ("Access Denied"); the skill stops with that message and adds nothing.
 - Items are added only after a logged-in session is confirmed. If the login wait ends without one, the skill stops and the cart is left unchanged.
 - Quantity estimation is best-effort and reported per item — review `output/results.json` and adjust in your cart as needed.
 - Low-confidence and `very-low` matches are flagged so you can double-check the chosen product.

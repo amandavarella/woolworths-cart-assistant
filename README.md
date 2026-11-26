@@ -89,7 +89,7 @@ default) to log into Woolworths:
 npm run shop
 ```
 
-After that, set `HEADLESS=true` in `.env` for unattended runs.
+After that the saved login is reused, so you rarely need to log in again. Keep `HEADLESS=false`: Woolworths blocks headless Chrome ("Access Denied").
 
 > If you re-enable the legacy Clove scraper with `CLOVE_MODE=web`, that step
 > will also prompt you to log into Clove on its first run.
@@ -198,7 +198,7 @@ Woolworths Fresh Herb Coriander Bunch each
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PROFILE_DIR` | `./.browser-profile` | Where the logged-in browser session is stored |
-| `HEADLESS` | `false` | Run without a visible window (keep `false` for first login) |
+| `HEADLESS` | `false` | Run without a visible window. Keep `false` for Woolworths, which blocks headless Chrome |
 | `BROWSER_CHANNEL` | `chrome` | `chrome` uses installed Chrome; `""` uses bundled Chromium |
 | `CLOVE_MODE` | `paste` | `paste` reads your pasted list; `web` uses the legacy browser scraper |
 | `CLOVE_LIST_FILE` | `./clove-list.txt` | Paste-mode input: your Clove list, one ingredient per line (git-ignored) |

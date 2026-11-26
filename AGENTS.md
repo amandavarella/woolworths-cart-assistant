@@ -58,7 +58,9 @@ Keep `src/` as the single source of shared logic. Skill scripts should stay thin
 The browser skills detect whether you are logged in and, if not, open a visible window and poll until you log in there (no terminal Enter needed), then continue. Because the session is saved in `PROFILE_DIR`, you only log in once. If login is still not confirmed when the wait ends, the skill stops. Cart items are not added, and the other browser skills do not continue.
 
 - The **first** run must be non-headless (`HEADLESS=false`).
-- After logging in once, set `HEADLESS=true` for unattended runs.
+- Keep `HEADLESS=false` for the Woolworths skills: Woolworths blocks headless Chrome ("Access Denied"), and the skills stop with that message rather than add anything.
+- When a Woolworths login is needed, the window opens straight on the sign-in page (`https://auth.woolworths.com.au/u/login/identifier`).
+- Login is confirmed only when Woolworths reports a signed-in, non-guest shopper (`/api/ui/v2/bootstrap`). Anything else counts as logged out, so the skills stop instead of filling a guest trolley.
 
 **Browser preference:** When a task needs a logged-in Woolworths (or Clove) session, drive this project's own persistent Chrome profile (`PROFILE_DIR`, e.g. `.browser-profile`) via Playwright — **not** the Cursor/built-in browser. (AnyList is the exception: it uses the AnyList API with credentials from `.env`, not a browser.) That profile already holds the saved login, so prefer launching it with `launchBrowser()` from `src/browser.js`. If the session isn't valid, run non-headless and let the user log in there once; don't ask the user to log into the Cursor browser.
 

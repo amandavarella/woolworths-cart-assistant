@@ -8,6 +8,7 @@ import {
   addToCart,
   setQuantity,
   readTrolley,
+  WOOLWORTHS_LOGIN_URL,
   isWoolworthsLoggedIn,
   selectDeliveryWindowIfStuck,
 } from "../../../src/woolworths.js";
@@ -42,6 +43,7 @@ export async function run(cfg = loadConfig()) {
       url: cfg.wwUrl,
       name: "Woolworths",
       isLoggedIn: isWoolworthsLoggedIn,
+      loginUrl: WOOLWORTHS_LOGIN_URL,
       headless: cfg.headless,
     });
 

@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, ensureOutputDir } from "../../../src/config.js";
 import { launchBrowser, ensureLoggedIn } from "../../../src/browser.js";
-import { isWoolworthsLoggedIn, readPastShopProducts, selectDeliveryWindowIfStuck } from "../../../src/woolworths.js";
+import { WOOLWORTHS_LOGIN_URL, isWoolworthsLoggedIn, readPastShopProducts, selectDeliveryWindowIfStuck } from "../../../src/woolworths.js";
 import { appendPreferred } from "../../../src/preferences.js";
 
 /**
@@ -29,6 +29,7 @@ export async function run(cfg = loadConfig()) {
       url: listUrl,
       name: "Woolworths",
       isLoggedIn: isWoolworthsLoggedIn,
+      loginUrl: WOOLWORTHS_LOGIN_URL,
       headless: cfg.headless,
     });
 

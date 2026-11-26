@@ -31,22 +31,30 @@ const NONFOOD_WORDS = [
 const SEARCH = (base, term) =>
   `${base}/shop/search/products?searchTerm=${encodeURIComponent(term)}`;
 
+// Woolworths' own sign-in page. ensureLoggedIn opens it when a login is needed.
+export const WOOLWORTHS_LOGIN_URL = "https://auth.woolworths.com.au/u/login/identifier";
+
+// Logged in only when the site's bootstrap API returns a non-guest shopper with
+// an id. Anything else (guest, an error, a bot-protection page, or a page on
+// another domain such as the sign-in page) counts as logged out, so a broken
+// check stops the run instead of filling a guest trolley.
 export async function isWoolworthsLoggedIn(page) {
-  return page.evaluate(async () => {
-    try {
-      const r = await fetch("/apis/ui/PersonalisedSettings/Details", {
-        headers: { Accept: "application/json" },
-        credentials: "include",
-      });
-      if (r.ok) {
-        const j = await r.json();
-        if (j && (j.IsLoggedIn === true || j.FirstName || j.GivenName)) return true;
+  if (!/^https:\/\/www\.woolworths\.com\.au\//.test(page.url())) return false;
+  return page
+    .evaluate(async () => {
+      try {
+        const r = await fetch("/api/ui/v2/bootstrap", {
+          headers: { Accept: "application/json" },
+          credentials: "include",
+        });
+        if (!r.ok) return false;
+        const shopper = (await r.json())?.ShopperRequest;
+        return !!shopper && shopper.IsGuest === false && !!shopper.Id;
+      } catch {
+        return false;
       }
-    } catch {}
-    const txt = document.body ? document.body.innerText : "";
-    if (/my account/i.test(txt) && /hi,?\s+\w/i.test(txt)) return true;
-    return false;
-  });
+    })
+    .catch(() => false); // page mid-navigation, e.g. returning from sign-in
 }
 
 // In-page helper: decide whether a product tile is a third-party

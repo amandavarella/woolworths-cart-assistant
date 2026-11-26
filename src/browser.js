@@ -27,7 +27,7 @@ const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
  * without a confirmed login, this throws. Callers must not add to the cart,
  * sync orders, or scrape after that.
  */
-export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) {
+export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless, loginUrl }) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2500);
 
@@ -36,10 +36,22 @@ export async function ensureLoggedIn(page, { url, name, isLoggedIn, headless }) 
     return true;
   }
 
+  if (/access denied/i.test(await page.title())) {
+    throw new Error(
+      `${name}: the site blocked this browser ("Access Denied"), which happens when running headless. Run with HEADLESS=false. Nothing was added or changed.`
+    );
+  }
+
   if (headless) {
     throw new Error(
       `${name}: not logged in and running headless. Run once with HEADLESS=false to log in.`
     );
+  }
+
+  if (loginUrl) {
+    // Go straight to the sign-in screen. If it fails to load, the page already
+    // open still lets the user log in.
+    await page.goto(loginUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
   }
 
   console.log(`\n⚠ ${name}: you don't appear to be logged in.`);

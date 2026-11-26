@@ -14,6 +14,12 @@ Before running any skill, gather context:
 
 Reads grocery ingredients from Clove and [AnyList](https://www.anylist.com/web), maps each one to **your preferred Woolworths product**, and adds them to your Woolworths online cart. Nothing is ever checked out; the cart is only filled for you to review and order. The Clove website is no longer live, so Clove items are read from a pasted list (`clove-list.txt`) by default (`CLOVE_MODE=paste`); the legacy browser scraper remains available via `CLOVE_MODE=web`.
 
+### Clove items usually go in from the Clove app now
+
+The user now adds Clove items to the Woolworths cart directly from the Clove mobile app. So a request to fill the cart usually means **AnyList items only**, and the Clove step is normally not needed. The Clove skill and the Clove side of the pipeline still work and stay as they are; run them only when the user asks for Clove items.
+
+When running AnyList only, check `output/` for a leftover `clove-items.json` first. `map-preferred-items` merges every source file it finds, so an old Clove file would put a past Clove list back in the cart. Ask before removing it, or move it aside.
+
 ## Skills
 
 Skills are modular instruction packages in the `skills/` directory. Each skill has:

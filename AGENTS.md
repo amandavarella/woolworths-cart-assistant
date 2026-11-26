@@ -20,18 +20,18 @@ The user now adds Clove items to the Woolworths cart directly from the Clove mob
 
 Run the default in this order:
 
-1. **Confirm the Woolworths session is logged in first**, before reading anything from AnyList. This uses the same helpers as `add-to-woolworths-cart`: it prints `✓ Woolworths: already logged in`, or opens a window and waits for the user to log in. If it ends with an error, stop and tell the user; do not go on to the next steps.
+1. **Confirm the Woolworths session is logged in first**, before reading anything from AnyList. This uses the same helpers as `add-to-woolworths-cart`: it prints `✓ Woolworths: already logged in`, or opens a window on the Woolworths sign-in page and waits for the user to log in. If it ends with an error, stop and tell the user; do not go on to the next steps.
 
    ```bash
    node --input-type=module -e '
    import { loadConfig } from "./src/config.js";
    import { launchBrowser, ensureLoggedIn } from "./src/browser.js";
-   import { isWoolworthsLoggedIn } from "./src/woolworths.js";
+   import { WOOLWORTHS_LOGIN_URL, isWoolworthsLoggedIn } from "./src/woolworths.js";
    const cfg = loadConfig();
    const context = await launchBrowser(cfg);
    try {
      const page = await context.newPage();
-     await ensureLoggedIn(page, { url: cfg.wwUrl, name: "Woolworths", isLoggedIn: isWoolworthsLoggedIn, headless: cfg.headless });
+     await ensureLoggedIn(page, { url: cfg.wwUrl, name: "Woolworths", isLoggedIn: isWoolworthsLoggedIn, headless: cfg.headless, loginUrl: WOOLWORTHS_LOGIN_URL });
    } finally { await context.close(); }'
    ```
 

@@ -39,7 +39,7 @@ Run the default in this order:
 3. `map-preferred-items`. Read the plan before adding: the matcher can pick a wrong product on a shared word (for example "Rubbish Bags" matched "Woolworths Red Onions Bag 1kg"). Fix clear mistakes in `output/shopping-plan.json` and tell the user what was changed.
 4. `add-to-woolworths-cart`
 
-When running AnyList only, check `output/` for a leftover `clove-items.json` first. `map-preferred-items` merges every source file it finds, so an old Clove file would put a past Clove list back in the cart. Ask before removing it, or move it aside.
+The default run does not check for Clove items or a leftover `output/clove-items.json`. A Clove file only appears when the user asks for a Clove run.
 
 ## Skills
 
